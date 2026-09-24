@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offers - Global Order Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#711612',
+            bg: '#EBEAE8',
+            accent: '#D4AF37',
+            text: '#2C2C2C',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #EBEAE8; color: #2C2C2C; }
+    .btn-primary { background-color: #D4AF37; color: white; padding: 0.75rem 1.5rem; border-radius: 0.375rem; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.2s; cursor: pointer; }
+    .btn-primary:hover { background-color: #b5952f; }
+    .btn-secondary { background-color: transparent; color: #711612; border: 1px solid #711612; padding: 0.75rem 1.5rem; border-radius: 0.375rem; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; }
+    .btn-secondary:hover { background-color: #711612; color: white; }
+    .nav-link { color: #2C2C2C; transition: color 0.2s; font-weight: 500; }
+    .nav-link:hover, .nav-link.active { color: #711612; }
+    .hero-bg { background: linear-gradient(to right, rgba(235, 234, 232, 0.9), rgba(235, 234, 232, 0.6)), url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover; }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-20">
+        <!-- Logo -->
+        <a href="index.html" class="flex-shrink-0 flex items-center gap-2">
+          <i data-lucide="package" class="h-8 w-8 text-brand"></i>
+          <span class="font-bold text-xl text-brand uppercase tracking-wider">Global Order</span>
+        </a>
+
+        <!-- Desktop Nav -->
+        <nav class="hidden md:flex space-x-8">
+          <a href="index.html" class="nav-link ">Home</a>
+          <a href="services.html" class="nav-link ">Services</a>
+          <a href="offers.html" class="nav-link active">Offers</a>
+          <a href="about.html" class="nav-link ">About</a>
+          <a href="contact.html" class="nav-link ">Contact</a>
+        </nav>
+
+        <!-- Right Side -->
+        <div class="hidden md:flex items-center space-x-6">
+          <button class="text-text hover:text-brand transition"><i data-lucide="search" class="h-5 w-5"></i></button>
+          
+          <div class="relative group">
+            <button class="flex items-center gap-1 text-text hover:text-brand transition">
+              <i data-lucide="globe" class="h-5 w-5"></i> EN
+            </button>
+          </div>
+
+          <a href="tracking.html" class="flex items-center gap-2 text-brand font-medium hover:text-accent transition">
+            <i data-lucide="map-pin" class="h-5 w-5"></i>
+            Track Order
+          </a>
+        </div>
+
+        <!-- Mobile menu button -->
+        <div class="md:hidden flex items-center">
+          <button id="mobile-menu-btn" class="text-text hover:text-brand">
+            <i data-lucide="menu" class="h-6 w-6"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mobile Nav (Hidden by default) -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 px-4 pt-2 pb-4 space-y-2 shadow-lg absolute w-full z-40">
+      <a href="index.html" class="block py-2 nav-link ">Home</a>
+      <a href="services.html" class="block py-2 nav-link ">Services</a>
+      <a href="offers.html" class="block py-2 nav-link active">Offers</a>
+      <a href="about.html" class="block py-2 nav-link ">About</a>
+      <a href="contact.html" class="block py-2 nav-link ">Contact</a>
+      <a href="tracking.html" class="block py-2 text-brand font-medium"><i data-lucide="map-pin" class="inline h-4 w-4 mr-2"></i>Track Order</a>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+
+    <section class="bg-brand py-16 text-white text-center">
+      <h1 class="text-4xl font-bold mb-4">Exclusive Offers</h1>
+      <p class="text-lg opacity-90 max-w-2xl mx-auto">Take advantage of our limited-time deals, shipping discounts, and special promotions.</p>
+    </section>
+
+    <section class="py-20 bg-bg">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          
+          <!-- Offer Card 1 -->
+          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative hover:shadow-lg transition">
+            <div class="absolute top-0 right-0 bg-accent text-white px-4 py-1 rounded-bl-lg font-bold text-sm">LIMITED TIME</div>
+            <div class="p-8">
+              <h3 class="text-xl font-bold text-brand mb-2">New Customer Promo</h3>
+              <p class="text-gray-600 mb-4">Get a special discount on your first international shopping order with us.</p>
+              <div class="text-3xl font-bold text-text mb-6">50% OFF <span class="text-sm text-gray-500 font-normal">shipping fee</span></div>
+              <p class="text-sm text-gray-500 mb-6">Valid until Oct 31, 2026. T&Cs apply.</p>
+              <a href="contact.html" class="btn-primary w-full text-center">Get This Offer</a>
+            </div>
+          </div>
+
+          <!-- Offer Card 2 -->
+          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative border-accent border-2 hover:shadow-lg transition">
+            <div class="absolute top-0 right-0 bg-accent text-white px-4 py-1 rounded-bl-lg font-bold text-sm">POPULAR</div>
+            <div class="p-8">
+              <h3 class="text-xl font-bold text-brand mb-2">SHEIN Special</h3>
+              <p class="text-gray-600 mb-4">Zero processing fees for all SHEIN clothing and accessory orders this month.</p>
+              <div class="text-3xl font-bold text-text mb-6">FREE <span class="text-sm text-gray-500 font-normal">processing</span></div>
+              <p class="text-sm text-gray-500 mb-6">Valid for orders over $50.</p>
+              <a href="contact.html" class="btn-primary w-full text-center">Get This Offer</a>
+            </div>
+          </div>
+
+          <!-- Offer Card 3 -->
+          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative hover:shadow-lg transition">
+            <div class="p-8">
+              <h3 class="text-xl font-bold text-brand mb-2">Wholesale Deal</h3>
+              <p class="text-gray-600 mb-4">Discounted cargo rates for heavy shipments from Alibaba and suppliers.</p>
+              <div class="text-3xl font-bold text-text mb-6">-20% <span class="text-sm text-gray-500 font-normal">on freight</span></div>
+              <p class="text-sm text-gray-500 mb-6">For shipments over 50kg.</p>
+              <a href="contact.html" class="btn-primary w-full text-center">Get This Offer</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-16 pt-16 pb-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <i data-lucide="package" class="h-6 w-6 text-brand"></i>
+            <span class="font-bold text-lg text-brand uppercase tracking-wider">Global Order</span>
+          </div>
+          <p class="text-gray-600 mb-4">Your trusted partner for international shopping and shipping. We bring global products directly to your door.</p>
+        </div>
+        
+        <div>
+          <h4 class="font-semibold text-text mb-4">Quick Links</h4>
+          <ul class="space-y-2">
+            <li><a href="index.html" class="text-gray-600 hover:text-brand transition">Home</a></li>
+            <li><a href="services.html" class="text-gray-600 hover:text-brand transition">Services</a></li>
+            <li><a href="offers.html" class="text-gray-600 hover:text-brand transition">Offers</a></li>
+            <li><a href="about.html" class="text-gray-600 hover:text-brand transition">About</a></li>
+            <li><a href="contact.html" class="text-gray-600 hover:text-brand transition">Contact</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="font-semibold text-text mb-4">Customer</h4>
+          <ul class="space-y-2">
+            <li><a href="tracking.html" class="text-gray-600 hover:text-brand transition">Track Order</a></li>
+            <li><a href="#" class="text-gray-600 hover:text-brand transition">How It Works</a></li>
+            <li><a href="#" class="text-gray-600 hover:text-brand transition">Shipping</a></li>
+            <li><a href="#" class="text-gray-600 hover:text-brand transition">FAQ</a></li>
+            <li><a href="contact.html" class="text-gray-600 hover:text-brand transition">Contact Support</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="font-semibold text-text mb-4">Contact</h4>
+          <ul class="space-y-2">
+            <li class="flex items-center gap-2 text-gray-600"><i data-lucide="phone" class="h-4 w-4"></i> +1 234 567 890</li>
+            <li class="flex items-center gap-2 text-gray-600"><i data-lucide="mail" class="h-4 w-4"></i> support@globalorder.com</li>
+            <li class="flex items-center gap-2 text-gray-600"><i data-lucide="message-circle" class="h-4 w-4"></i> WhatsApp Support</li>
+          </ul>
+          <div class="flex space-x-4 mt-6">
+            <a href="#" class="text-gray-400 hover:text-brand transition"><i data-lucide="facebook" class="h-5 w-5"></i></a>
+            <a href="#" class="text-gray-400 hover:text-brand transition"><i data-lucide="instagram" class="h-5 w-5"></i></a>
+            <a href="#" class="text-gray-400 hover:text-brand transition"><i data-lucide="twitter" class="h-5 w-5"></i></a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center">
+        <p class="text-gray-500 text-sm">© 2026 Global Order. All rights reserved.</p>
+        <div class="flex items-center gap-2 mt-4 md:mt-0 text-sm text-gray-500">
+          <i data-lucide="globe" class="h-4 w-4"></i>
+          <span>English | Arabic | Kurdish</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+    
+    // Mobile menu toggle
+    const btn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-menu');
+    if(btn && menu) {
+      btn.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+      });
+    }
+  </script>
+</body>
+</html>
