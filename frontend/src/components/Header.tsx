@@ -272,7 +272,7 @@ const Header: React.FC = () => {
 
       {/* ─── SEARCH OVERLAY ──────────────────────────────────────────────────── */}
       {searchOpen && (
-        <div className="overlay" onClick={() => setSearchOpen(false)}>
+        <div className="overlay" onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
           <div
             className="modal w-full max-w-2xl mx-4"
             onClick={e => e.stopPropagation()}
@@ -289,7 +289,26 @@ const Header: React.FC = () => {
                 className="flex-1 text-base text-charcoal placeholder-charcoal-lighter/60 outline-none bg-transparent"
                 dir={direction}
               />
-              <button onClick={() => setSearchOpen(false)} className="p-1 hover:text-brand transition-colors">
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    searchInputRef.current?.focus();
+                  }}
+                  className="p-1 px-2.5 py-1 text-xs font-medium text-charcoal-lighter hover:text-red-600 bg-bg hover:bg-red-50 rounded transition-colors flex items-center gap-1 flex-shrink-0"
+                  title="Clear text"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Clear
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                className="p-1.5 hover:text-brand hover:bg-bg rounded transition-colors flex-shrink-0 ml-1"
+                title="Close"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -319,7 +338,7 @@ const Header: React.FC = () => {
                     <Link
                       key={result.id}
                       to={result.url}
-                      onClick={() => setSearchOpen(false)}
+                      onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
                       className="flex items-start gap-3 p-3 rounded-sm hover:bg-bg transition-colors duration-150 group"
                     >
                       <div className={`mt-0.5 w-7 h-7 rounded-sm flex items-center justify-center flex-shrink-0 ${
