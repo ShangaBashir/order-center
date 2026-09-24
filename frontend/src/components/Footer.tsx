@@ -43,9 +43,7 @@ const Footer: React.FC = () => {
                 </div>
               </div>
             </Link>
-            <p className="text-white/50 text-sm leading-relaxed mb-6">
-              {t('footer.desc')}
-            </p>
+
             {/* Social */}
             <div className="flex gap-2">
               {[
@@ -145,17 +143,7 @@ const Footer: React.FC = () => {
                   </div>
                 </a>
               </li>
-              <li>
-                <a href="https://wa.me/07701566233" target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 group">
-                  <div className="w-8 h-8 rounded-sm bg-white/8 flex items-center justify-center flex-shrink-0 group-hover:bg-green-600 transition-colors">
-                    <MessageCircle className="w-3.5 h-3.5 text-white/50 group-hover:text-white" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">WhatsApp</div>
-                    <div className="text-sm text-white/60 group-hover:text-white transition-colors">07701566233</div>
-                  </div>
-                </a>
-              </li>
+
               <li>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-sm bg-white/8 flex items-center justify-center flex-shrink-0">
