@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AdminOrder, PublicTrackingData, AdminUser, OrderStatus } from '../types';
+import { AdminOrder, PublicTrackingData, AdminUser, OrderStatus, Customer } from '../types';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -378,5 +378,132 @@ export const orderApi = {
       }
       throw new Error('Order not found. Please check your Order ID or Tracking Number.');
     }
+  }
+};
+
+let localCustomersStore: Customer[] = [
+  {
+    _id: 'cust_1',
+    customerId: 'CUST-1001',
+    name: 'Shanga Bashir',
+    phone: '07701566233',
+    email: 'shanga@example.com',
+    address: 'Salim Street, Sulaimanyiah, Kurdistan Region, Iraq',
+    notes: 'VIP Customer',
+    totalOrders: 1,
+    totalSpent: 80.00,
+    createdAt: '2026-09-20T10:00:00Z',
+  },
+  {
+    _id: 'cust_2',
+    customerId: 'CUST-1002',
+    name: 'Amed Karzan',
+    phone: '07511946651',
+    email: 'amed.k@example.com',
+    address: 'Piramagrun, Sulaimanyiah, Iraq',
+    notes: '',
+    totalOrders: 1,
+    totalSpent: 115.00,
+    createdAt: '2026-09-18T09:00:00Z',
+  },
+  {
+    _id: 'cust_3',
+    customerId: 'CUST-1003',
+    name: 'Soran Mustafa',
+    phone: '07709876543',
+    email: 'soran@example.com',
+    address: 'Bakrajo, Sulaimanyiah, Iraq',
+    notes: '',
+    totalOrders: 1,
+    totalSpent: 180.00,
+    createdAt: '2026-09-15T12:00:00Z',
+  },
+  {
+    _id: 'cust_4',
+    customerId: 'CUST-1004',
+    name: 'Diyar Hawrami',
+    phone: '07504445566',
+    email: 'diyar@example.com',
+    address: 'Raniya, Kurdistan Region, Iraq',
+    notes: '',
+    totalOrders: 1,
+    totalSpent: 125.00,
+    createdAt: '2026-09-24T14:00:00Z',
+  },
+  {
+    _id: 'cust_5',
+    customerId: 'CUST-1005',
+    name: 'Lina Ali',
+    phone: '07712223344',
+    email: 'lina@example.com',
+    address: 'Tavga Street, Sulaimanyiah, Iraq',
+    notes: '',
+    totalOrders: 1,
+    totalSpent: 90.00,
+    createdAt: '2026-09-22T08:00:00Z',
+  },
+];
+
+export const customerApi = {
+  async getCustomers(): Promise<Customer[]> {
+    try {
+      const res = await api.get('/customers');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        localCustomersStore = res.data;
+        return res.data;
+      }
+      return localCustomersStore;
+    } catch (err) {
+      return localCustomersStore;
+    }
+  },
+
+  async createCustomer(custData: Partial<Customer>): Promise<{ message: string; customer: Customer; customerId: string }> {
+    try {
+      const res = await api.post('/customers', custData);
+      const created = res.data.customer;
+      localCustomersStore.unshift(created);
+      return res.data;
+    } catch (err) {
+      let maxNum = 1000;
+      for (const c of localCustomersStore) {
+        if (c.customerId && c.customerId.startsWith('CUST-')) {
+          const num = parseInt(c.customerId.replace('CUST-', ''), 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      }
+      const newCustId = `CUST-${maxNum + 1}`;
+      const now = new Date().toISOString();
+      const newCust: Customer = {
+        _id: `cust_${Date.now()}`,
+        customerId: newCustId,
+        name: custData.name || '',
+        phone: custData.phone || '',
+        email: custData.email || '',
+        address: custData.address || '',
+        notes: custData.notes || '',
+        totalOrders: 0,
+        totalSpent: 0,
+        createdAt: now,
+        updatedAt: now
+      };
+      localCustomersStore.unshift(newCust);
+      return {
+        message: 'Customer registered successfully.',
+        customer: newCust,
+        customerId: newCustId
+      };
+    }
+  },
+
+  async deleteCustomer(id: string): Promise<void> {
+    try {
+      await api.delete(`/customers/${id}`);
+    } catch (err) {
+      // fallback local deletion
+    }
+    localCustomersStore = localCustomersStore.filter(
+      c => c.customerId !== id && c._id !== id
+    );
   }
 };

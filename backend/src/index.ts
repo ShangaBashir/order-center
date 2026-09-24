@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import orderRoutes from './routes/orders';
 import trackingRoutes from './routes/tracking';
+import customerRoutes from './routes/customers';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/tracking', trackingRoutes);
+app.use('/api/customers', customerRoutes);
 
 // Root health check
 app.get('/api/health', (req, res) => {

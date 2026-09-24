@@ -24,7 +24,77 @@ export interface OrderData {
   updatedAt: string;
 }
 
+export interface CustomerData {
+  _id: string;
+  customerId: string;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 class MemoryStore {
+  private customers: CustomerData[] = [
+    {
+      _id: 'cust_1',
+      customerId: 'CUST-1001',
+      name: 'Shanga Bashir',
+      phone: '07701566233',
+      email: 'shanga@example.com',
+      address: 'Salim Street, Sulaimanyiah, Kurdistan Region, Iraq',
+      notes: 'VIP Customer',
+      createdAt: '2026-09-20T10:00:00Z',
+      updatedAt: '2026-09-20T10:00:00Z',
+    },
+    {
+      _id: 'cust_2',
+      customerId: 'CUST-1002',
+      name: 'Amed Karzan',
+      phone: '07511946651',
+      email: 'amed.k@example.com',
+      address: 'Piramagrun, Sulaimanyiah, Iraq',
+      notes: '',
+      createdAt: '2026-09-18T09:00:00Z',
+      updatedAt: '2026-09-18T09:00:00Z',
+    },
+    {
+      _id: 'cust_3',
+      customerId: 'CUST-1003',
+      name: 'Soran Mustafa',
+      phone: '07709876543',
+      email: 'soran@example.com',
+      address: 'Bakrajo, Sulaimanyiah, Iraq',
+      notes: '',
+      createdAt: '2026-09-15T12:00:00Z',
+      updatedAt: '2026-09-15T12:00:00Z',
+    },
+    {
+      _id: 'cust_4',
+      customerId: 'CUST-1004',
+      name: 'Diyar Hawrami',
+      phone: '07504445566',
+      email: 'diyar@example.com',
+      address: 'Raniya, Kurdistan Region, Iraq',
+      notes: '',
+      createdAt: '2026-09-24T14:00:00Z',
+      updatedAt: '2026-09-24T14:00:00Z',
+    },
+    {
+      _id: 'cust_5',
+      customerId: 'CUST-1005',
+      name: 'Lina Ali',
+      phone: '07712223344',
+      email: 'lina@example.com',
+      address: 'Tavga Street, Sulaimanyiah, Iraq',
+      notes: '',
+      createdAt: '2026-09-22T08:00:00Z',
+      updatedAt: '2026-09-22T08:00:00Z',
+    },
+  ];
+
   private orders: OrderData[] = [
     {
       _id: 'ord_1',
@@ -295,6 +365,54 @@ class MemoryStore {
     const initialLen = this.orders.length;
     this.orders = this.orders.filter(o => o.orderId.toLowerCase() !== orderId.toLowerCase() && o._id !== orderId);
     return this.orders.length < initialLen;
+  }
+
+  // Customer Methods
+  public getAllCustomers(): CustomerData[] {
+    return this.customers;
+  }
+
+  public getCustomer(idOrCustomerId: string): CustomerData | undefined {
+    return this.customers.find(
+      c => c.customerId.toLowerCase() === idOrCustomerId.toLowerCase() || c._id === idOrCustomerId
+    );
+  }
+
+  public generateCustomerId(): string {
+    let maxNum = 1000;
+    for (const c of this.customers) {
+      if (c.customerId && c.customerId.startsWith('CUST-')) {
+        const num = parseInt(c.customerId.replace('CUST-', ''), 10);
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+      }
+    }
+    return `CUST-${maxNum + 1}`;
+  }
+
+  public addCustomer(data: Omit<CustomerData, '_id' | 'createdAt' | 'updatedAt' | 'customerId'> & { customerId?: string }): CustomerData {
+    const now = new Date().toISOString();
+    const newId = data.customerId || this.generateCustomerId();
+    const customer: CustomerData = {
+      _id: `cust_${Date.now()}`,
+      customerId: newId,
+      name: data.name,
+      phone: data.phone,
+      email: data.email || '',
+      address: data.address,
+      notes: data.notes || '',
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.customers.unshift(customer);
+    return customer;
+  }
+
+  public deleteCustomer(idOrCustomerId: string): boolean {
+    const initialLen = this.customers.length;
+    this.customers = this.customers.filter(
+      c => c.customerId.toLowerCase() !== idOrCustomerId.toLowerCase() && c._id !== idOrCustomerId
+    );
+    return this.customers.length < initialLen;
   }
 }
 

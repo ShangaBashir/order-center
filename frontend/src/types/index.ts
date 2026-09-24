@@ -93,6 +93,20 @@ export interface AdminUser {
   role: string;
 }
 
+export interface Customer {
+  _id?: string;
+  customerId: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address: string;
+  notes?: string;
+  totalOrders?: number;
+  totalSpent?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Legacy Tracking types
 export interface TrackingStep {
   id: string;

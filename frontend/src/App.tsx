@@ -18,6 +18,7 @@ import { AdminOrders } from './pages/AdminOrders';
 import { AdminAddOrder } from './pages/AdminAddOrder';
 import { AdminTracking } from './pages/AdminTracking';
 import { AdminCustomers } from './pages/AdminCustomers';
+import { AddCustomerPage } from './pages/AddCustomerPage';
 import { AdminSettings } from './pages/AdminSettings';
 import { PublicTrackingPage } from './pages/PublicTrackingPage';
 
@@ -63,6 +64,7 @@ function MainLayout() {
           <Route path="/admin/add-order" element={<AdminAddOrder />} />
           <Route path="/admin/tracking" element={<AdminTracking />} />
           <Route path="/admin/customers" element={<AdminCustomers />} />
+          <Route path="/admin/add-customer" element={<AddCustomerPage />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
 
           {/* Catch-all fallback */}
