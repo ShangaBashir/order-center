@@ -169,10 +169,13 @@ const Footer: React.FC = () => {
 
       {/* Bottom Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-        <div className="flex items-center justify-center">
-          <p className="text-sm text-white/30 text-center">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/30">
+          <p className="text-sm text-white/30 text-center sm:text-left">
             © {currentYear} OrderCenter. {t('footer.rights')}
           </p>
+          <Link to="/admin/login" className="text-white/30 hover:text-gold transition-colors font-medium">
+            🔒 Admin Portal
+          </Link>
         </div>
       </div>
     </footer>
