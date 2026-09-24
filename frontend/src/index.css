@@ -229,6 +229,12 @@
     transform: rotate(45deg);
     pointer-events: none;
   }
+
+  /* Fix: remove the 1px gap SVGs leave when rendered inline inside the wave container */
+  .absolute.bottom-0 svg,
+  [class*="bottom-0"] svg {
+    display: block;
+  }
 }
 
 @layer utilities {

@@ -117,7 +117,7 @@ const ContactPage: React.FC = () => {
           </div>
         </div>
         <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 60" fill="none">
+          <svg viewBox="0 0 1440 60" fill="none" style={{display:'block'}}>
             <path d="M0 60L1440 60V30C1320 10 1200 0 1080 5C960 10 840 30 720 35C600 40 480 30 360 20C240 10 120 5 60 7.5L0 10V60Z" fill="#EBEAE8"/>
           </svg>
         </div>
