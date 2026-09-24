@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
-  Search, Package, ArrowLeft, AlertCircle
+  Search, Package, AlertCircle
 } from 'lucide-react';
 import { orderApi } from '../api';
 import { PublicTrackingData } from '../types';

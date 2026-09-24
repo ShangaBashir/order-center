@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Sidebar } from './Sidebar';
