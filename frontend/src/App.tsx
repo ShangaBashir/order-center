@@ -9,6 +9,7 @@ import OffersPage from './pages/OffersPage';
 import ContactPage from './pages/ContactPage';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 
 // Admin & Tracking pages
 import { AdminLogin } from './pages/AdminLogin';
@@ -78,9 +79,11 @@ function MainLayout() {
 function App() {
   return (
     <AuthProvider>
-      <LanguageProvider>
-        <MainLayout />
-      </LanguageProvider>
+      <SettingsProvider>
+        <LanguageProvider>
+          <MainLayout />
+        </LanguageProvider>
+      </SettingsProvider>
     </AuthProvider>
   );
 }

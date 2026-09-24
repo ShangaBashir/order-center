@@ -8,8 +8,10 @@ import { orderApi } from '../api';
 import { AdminOrder, OrderStatus, ALL_ORDER_STATUSES } from '../types';
 import { OrderDetailsModal } from '../components/OrderDetailsModal';
 import { EditOrderModal } from '../components/EditOrderModal';
+import { useSettings } from '../context/SettingsContext';
 
 export const AdminOrders: React.FC = () => {
+  const { formatPriceWithIqd } = useSettings();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -199,7 +201,7 @@ export const AdminOrders: React.FC = () => {
                         {ord.productName}
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-800">
-                        ${ord.totalPrice.toFixed(2)} {ord.currency}
+                        {formatPriceWithIqd(ord.totalPrice).combinedStr}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${getStatusBadge(ord.status)}`}>

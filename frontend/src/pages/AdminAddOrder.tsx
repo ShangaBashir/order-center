@@ -6,9 +6,11 @@ import {
 import { AdminLayout } from '../components/AdminLayout';
 import { orderApi } from '../api';
 import { OrderStatus, ALL_ORDER_STATUSES } from '../types';
+import { useSettings } from '../context/SettingsContext';
 
 export const AdminAddOrder: React.FC = () => {
   const navigate = useNavigate();
+  const { usdToIqdRate, formatPriceWithIqd } = useSettings();
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -290,9 +292,16 @@ export const AdminAddOrder: React.FC = () => {
                 </div>
 
                 {/* Total Price Display */}
-                <div className="sm:col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-600">Calculated Total Price:</span>
-                  <span className="text-lg font-bold text-[#711612]">${totalPrice.toFixed(2)} {formData.currency}</span>
+                <div className="sm:col-span-2 p-4 bg-[#EBEAE8]/80 border border-[#D4AF37]/50 rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm">
+                  <div>
+                    <span className="text-xs font-bold text-slate-700 block">Calculated Total Price</span>
+                    <span className="text-[10px] text-slate-500 block">Exchange rate: 1 USD = {usdToIqdRate.toLocaleString()} IQD</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-extrabold text-[#711612] block">
+                      {formatPriceWithIqd(totalPrice).combinedStr}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

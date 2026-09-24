@@ -6,8 +6,10 @@ import {
 import { orderApi } from '../api';
 import { PublicTrackingData } from '../types';
 import { StatusTimeline } from '../components/StatusTimeline';
+import { useSettings } from '../context/SettingsContext';
 
 export const PublicTrackingPage: React.FC = () => {
+  const { formatPriceWithIqd } = useSettings();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialId = searchParams.get('id') || 'HB-2026-00001';
 
@@ -131,7 +133,11 @@ export const PublicTrackingPage: React.FC = () => {
                     Order ID: {trackingData.orderId}
                   </span>
                   <h2 className="text-xl sm:text-2xl font-bold">{trackingData.productName}</h2>
-                  <p className="text-xs text-white/70 mt-1">Quantity: {trackingData.quantity}</p>
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-white/80">
+                    <span>Quantity: {trackingData.quantity}</span>
+                    <span>•</span>
+                    <span className="font-bold text-[#D4AF37]">Total: {formatPriceWithIqd(trackingData.totalPrice).combinedStr}</span>
+                  </div>
                 </div>
 
                 <div className="bg-white/10 backdrop-blur p-4 rounded-lg border border-white/20 text-right sm:min-w-[180px]">

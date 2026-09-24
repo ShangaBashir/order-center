@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { AdminOrder, OrderStatus, ALL_ORDER_STATUSES } from '../types';
 import { StatusTimeline } from './StatusTimeline';
+import { useSettings } from '../context/SettingsContext';
 
 interface OrderDetailsModalProps {
   order: AdminOrder | null;
@@ -20,6 +21,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onEditOrder,
   onDeleteOrder
 }) => {
+  const { formatPriceWithIqd } = useSettings();
   if (!order) return null;
 
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus>(order.status);
@@ -107,7 +109,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             </div>
             <div>
               <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Total Price</div>
-              <div className="text-sm font-bold text-slate-800 mt-0.5">${order.totalPrice.toFixed(2)} {order.currency}</div>
+              <div className="text-sm font-bold text-slate-800 mt-0.5">{formatPriceWithIqd(order.totalPrice).combinedStr}</div>
             </div>
             <div>
               <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Tracking Number</div>
@@ -190,7 +192,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   <div className="bg-slate-50 p-2 rounded border"><span className="text-slate-400 block">Quantity</span> <span className="font-bold text-slate-800">{order.quantity}</span></div>
                   <div className="bg-slate-50 p-2 rounded border"><span className="text-slate-400 block">Unit Price</span> <span className="font-bold text-slate-800">${order.productPrice.toFixed(2)}</span></div>
                   <div className="bg-slate-50 p-2 rounded border"><span className="text-slate-400 block">Shipping Fee</span> <span className="font-bold text-slate-800">${order.shippingFee.toFixed(2)}</span></div>
-                  <div className="bg-slate-50 p-2 rounded border"><span className="text-slate-400 block">Total</span> <span className="font-bold text-[#711612]">${order.totalPrice.toFixed(2)} {order.currency}</span></div>
+                  <div className="bg-slate-50 p-2 rounded border"><span className="text-slate-400 block">Total</span> <span className="font-bold text-[#711612]">{formatPriceWithIqd(order.totalPrice).combinedStr}</span></div>
                 </div>
               </div>
             </div>
