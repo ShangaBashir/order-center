@@ -153,23 +153,12 @@ const Header: React.FC = () => {
           <div className="flex items-center justify-between h-16 lg:h-20">
 
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
-              <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-sm bg-brand flex items-center justify-center shadow-premium transition-transform duration-300 group-hover:scale-105">
-                <svg viewBox="0 0 40 40" className="w-5 h-5 lg:w-6 lg:h-6 fill-white">
-                  <path d="M20 4L36 12V28L20 36L4 28V12L20 4Z" strokeWidth="1.5" stroke="rgba(255,255,255,0.4)" fill="none"/>
-                  <path d="M20 4L36 12L20 20L4 12L20 4Z" fill="rgba(255,255,255,0.9)"/>
-                  <path d="M20 20V36L4 28V12L20 20Z" fill="rgba(255,255,255,0.5)"/>
-                  <path d="M20 20V36L36 28V12L20 20Z" fill="rgba(255,255,255,0.7)"/>
-                </svg>
-              </div>
-              <div className="hidden sm:block">
-                <div className="font-display font-bold text-brand text-lg lg:text-xl leading-none tracking-tight">
-                  OrderCenter
-                </div>
-                <div className="text-[10px] text-charcoal-lighter font-medium tracking-[0.15em] uppercase leading-none mt-0.5">
-                  Global Shopping & Shipping
-                </div>
-              </div>
+            <Link to="/" className="flex items-center group flex-shrink-0">
+              <img
+                src="/logo.png"
+                alt="OrderCenter Logo"
+                className="h-12 lg:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              />
             </Link>
 
             {/* Desktop Navigation */}
