@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Menu, Globe } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Sidebar } from './Sidebar';
 
@@ -54,18 +54,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = 'Das
 
           {/* Header Action Buttons */}
           <div className="flex items-center gap-3">
-            <Link
-              to="/track"
-              target="_blank"
-              className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold bg-slate-100 hover:bg-[#711612] text-[#711612] hover:text-white transition-all duration-200 border border-slate-200"
-              title="Open public tracking page in new tab"
-            >
-              <Globe className="w-4 h-4" />
-              <span>Customer Track Portal</span>
-            </Link>
-
-            <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-full bg-[#711612] text-white flex items-center justify-center font-bold text-sm shadow-sm border border-[#D4AF37]">
                 {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}

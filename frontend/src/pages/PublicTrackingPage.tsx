@@ -48,22 +48,14 @@ export const PublicTrackingPage: React.FC = () => {
       <div>
         {/* Header Header Bar */}
         <header className="bg-[#711612] text-white py-6 px-4 sm:px-8 border-b border-[#D4AF37]/40 shadow-md">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3 group">
+          <div className="max-w-5xl mx-auto flex items-center justify-center">
+            <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Order Center Logo" className="h-10 w-auto object-contain" />
               <div>
                 <div className="font-display font-bold text-white text-lg">Order Center</div>
                 <div className="text-[10px] text-[#D4AF37] font-semibold tracking-wider uppercase">Global Shopping & Shipping</div>
               </div>
-            </Link>
-
-            <Link
-              to="/"
-              className="text-xs font-semibold text-white/80 hover:text-white flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-md hover:bg-white/20 transition"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Website</span>
-            </Link>
+            </div>
           </div>
         </header>
 

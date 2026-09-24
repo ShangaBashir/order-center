@@ -105,14 +105,7 @@ export const AdminLogin: React.FC = () => {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </>
             )}
-          </button>
         </form>
-
-        <div className="p-4 bg-slate-50 text-center border-t border-slate-200 text-xs text-slate-500">
-          <Link to="/" className="text-[#711612] hover:underline font-semibold">
-            ← Return to Order Center Homepage
-          </Link>
-        </div>
       </div>
     </div>
   );
