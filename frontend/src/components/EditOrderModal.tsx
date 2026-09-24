@@ -31,15 +31,17 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
   });
 
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError('');
     try {
       await onSave(order.orderId, formData);
       onClose();
-    } catch (err) {
-      alert('Failed to save order changes');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save order changes');
     } finally {
       setSaving(false);
     }
@@ -54,6 +56,11 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-center gap-2">
+              <span className="font-medium">{error}</span>
+            </div>
+          )}
           {/* Customer Info */}
           <div>
             <h4 className="text-xs font-bold text-[#711612] uppercase tracking-wider mb-3">Customer Information</h4>

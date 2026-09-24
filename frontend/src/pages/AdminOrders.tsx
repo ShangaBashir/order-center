@@ -8,6 +8,7 @@ import { orderApi } from '../api';
 import { AdminOrder, OrderStatus, ALL_ORDER_STATUSES } from '../types';
 import { OrderDetailsModal } from '../components/OrderDetailsModal';
 import { EditOrderModal } from '../components/EditOrderModal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { useSettings } from '../context/SettingsContext';
 
 export const AdminOrders: React.FC = () => {
@@ -20,6 +21,8 @@ export const AdminOrders: React.FC = () => {
 
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [editOrder, setEditOrder] = useState<AdminOrder | null>(null);
+  const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<AdminOrder | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -52,8 +55,14 @@ export const AdminOrders: React.FC = () => {
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    await orderApi.deleteOrder(orderId);
-    await loadOrders();
+    setIsDeleting(true);
+    try {
+      await orderApi.deleteOrder(orderId);
+      await loadOrders();
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOrder(null);
+    }
   };
 
   // Filter & Sort logic
@@ -234,11 +243,7 @@ export const AdminOrders: React.FC = () => {
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => {
-                              if (window.confirm(`Delete order ${ord.orderId}?`)) {
-                                handleDeleteOrder(ord.orderId);
-                              }
-                            }}
+                            onClick={() => setDeleteConfirmOrder(ord)}
                             className="p-1.5 rounded bg-red-50 hover:bg-red-600 text-red-600 hover:text-white transition"
                             title="Delete Order"
                           >
@@ -268,6 +273,18 @@ export const AdminOrders: React.FC = () => {
         order={editOrder}
         onClose={() => setEditOrder(null)}
         onSave={handleSaveEdit}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteConfirmOrder}
+        title="Delete Order"
+        message={deleteConfirmOrder ? `Are you sure you want to delete order ${deleteConfirmOrder.orderId}? This action cannot be undone.` : ''}
+        confirmText="Delete Order"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+        onConfirm={() => deleteConfirmOrder && handleDeleteOrder(deleteConfirmOrder.orderId)}
+        onCancel={() => setDeleteConfirmOrder(null)}
       />
     </AdminLayout>
   );

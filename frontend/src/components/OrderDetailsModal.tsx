@@ -6,6 +6,8 @@ import { AdminOrder, OrderStatus, ALL_ORDER_STATUSES } from '../types';
 import { StatusTimeline } from './StatusTimeline';
 import { useSettings } from '../context/SettingsContext';
 
+import { ConfirmModal } from './ConfirmModal';
+
 interface OrderDetailsModalProps {
   order: AdminOrder | null;
   onClose: () => void;
@@ -28,6 +30,8 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   const [statusNote, setStatusNote] = useState('');
   const [updating, setUpdating] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleUpdateStatus = async () => {
     setUpdating(true);
@@ -38,16 +42,20 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
       setStatusNote('');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
-      alert('Failed to update status');
+      console.error('Failed to update status', err);
     } finally {
       setUpdating(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm(`Are you sure you want to delete order ${order.orderId}? This cannot be undone.`)) {
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
       await onDeleteOrder(order.orderId);
+      setShowDeleteConfirm(false);
       onClose();
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -76,7 +84,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               <span>Edit</span>
             </button>
             <button
-              onClick={handleDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               className="px-3 py-1.5 rounded text-xs font-semibold bg-red-600/80 hover:bg-red-600 text-white flex items-center gap-1.5 transition"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -255,6 +263,18 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Order"
+        message={`Are you sure you want to delete order ${order.orderId}? This action cannot be undone.`}
+        confirmText="Delete Order"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 };

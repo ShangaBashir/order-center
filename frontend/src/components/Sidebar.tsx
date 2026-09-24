@@ -33,9 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
       {/* Brand Header */}
       <div className="p-5 relative overflow-hidden bg-gradient-to-r from-[#711612] via-[#8B1E1A] to-[#57100D] border-b border-[#D4AF37]/30 shadow-md">
         <div className="flex items-center gap-3.5 relative z-10">
-          <div className="p-1.5 rounded-lg bg-black/20 backdrop-blur-md border border-white/10">
-            <img src="/logo.png" alt="Order Center Logo" className="h-9 w-auto object-contain drop-shadow" />
-          </div>
+          <img src="/logo.png" alt="Order Center Logo" className="h-10 w-auto object-contain drop-shadow-md" />
           <div>
             <div className="font-display font-bold text-white text-base leading-tight tracking-wide">
               Order Center
