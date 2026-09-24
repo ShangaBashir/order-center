@@ -165,15 +165,10 @@ const Footer: React.FC = () => {
 
       {/* Bottom Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-sm text-white/30">
+        <div className="flex items-center justify-center">
+          <p className="text-sm text-white/30 text-center">
             © {currentYear} OrderCenter. {t('footer.rights')}
           </p>
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-white/20">Made with</span>
-            <span className="text-gold text-sm">♥</span>
-            <span className="text-xs text-white/20">for our customers</span>
-          </div>
         </div>
       </div>
     </footer>
