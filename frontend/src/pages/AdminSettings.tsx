@@ -80,25 +80,6 @@ export const AdminSettings: React.FC = () => {
                 <div className="text-[10px] text-slate-400">Rate: 1 USD = {rateInput} IQD</div>
               </div>
             </div>
-
-            {/* Presets */}
-            <div className="flex items-center gap-2 pt-1">
-              <span className="text-xs font-semibold text-slate-500">Quick Rate Presets:</span>
-              {[1500, 1510, 1520, 1530, 1550].map(r => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRateInput(r)}
-                  className={`px-2.5 py-1 text-xs font-bold rounded border transition ${
-                    rateInput === r
-                      ? 'bg-[#711612] text-white border-[#711612]'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                  }`}
-                >
-                  {r.toLocaleString()} IQD
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* ORDER ID GENERATION RULES */}
