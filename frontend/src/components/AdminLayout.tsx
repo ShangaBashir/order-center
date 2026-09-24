@@ -10,7 +10,7 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = 'Dashboard' }) => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   if (loading) {
@@ -54,14 +54,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = 'Das
 
           {/* Header Action Buttons */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-[#711612] text-white flex items-center justify-center font-bold text-sm shadow-sm border border-[#D4AF37]">
-                {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
-              </div>
-              <span className="text-sm font-semibold hidden md:inline text-slate-800">
-                {user?.name || 'Admin'}
-              </span>
-            </div>
           </div>
         </header>
 

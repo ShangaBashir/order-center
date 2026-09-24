@@ -11,7 +11,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -45,19 +45,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
           </div>
         </div>
       </div>
-
-      {/* Admin User Badge */}
-      {user && (
-        <div className="px-6 py-4 bg-black/20 border-b border-white/5 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#711612] text-white font-bold flex items-center justify-center text-xs border border-[#D4AF37]">
-            {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
-          </div>
-          <div className="overflow-hidden">
-            <div className="text-xs font-semibold text-white truncate">{user.name || 'Admin'}</div>
-            <div className="text-[10px] text-white/50 truncate">{user.email || 'admin@ordercenter.iq'}</div>
-          </div>
-        </div>
-      )}
 
       {/* Navigation Links */}
       <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
