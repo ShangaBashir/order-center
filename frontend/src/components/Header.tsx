@@ -153,12 +153,20 @@ const Header: React.FC = () => {
           <div className="flex items-center justify-between h-16 lg:h-20">
 
             {/* Logo */}
-            <Link to="/" className="flex items-center group flex-shrink-0">
+            <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
               <img
                 src="/logo.png"
                 alt="OrderCenter Logo"
                 className="h-12 lg:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
               />
+              <div className="hidden sm:block">
+                <div className="font-display font-bold text-brand text-lg lg:text-xl leading-none tracking-tight">
+                  Order Center
+                </div>
+                <div className="text-[10px] text-charcoal-lighter font-medium tracking-[0.15em] uppercase leading-none mt-0.5">
+                  Global Shopping & Shipping
+                </div>
+              </div>
             </Link>
 
             {/* Desktop Navigation */}
