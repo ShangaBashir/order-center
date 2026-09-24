@@ -114,7 +114,7 @@ const Header: React.FC = () => {
   ];
 
   // Search filtering
-  const searchResults = searchQuery.length > 1
+  const searchResults = searchQuery.trim().length > 0
     ? SEARCH_DATA.filter(
         item =>
           item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -216,19 +216,18 @@ const Header: React.FC = () => {
                 </button>
 
                 {langOpen && (
-                  <div className="dropdown right-0 top-full mt-2 w-44 py-1">
+                  <div className="dropdown right-0 top-full mt-2 w-36 py-1">
                     {LANGUAGES.map(lang => (
                       <button
                         key={lang.code}
                         onClick={() => { setLanguage(lang.code); setLangOpen(false); }}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-bg transition-colors duration-150 ${
+                        className={`w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-bg transition-colors duration-150 ${
                           language === lang.code ? 'text-brand font-semibold bg-brand/5' : 'text-charcoal'
                         }`}
                       >
-                        <span className="text-base">{lang.flag}</span>
                         <span>{lang.nativeName}</span>
                         {language === lang.code && (
-                          <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                         )}
                       </button>
                     ))}
@@ -313,60 +312,45 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Results / Suggestions */}
-            <div className="p-5 max-h-96 overflow-y-auto">
-              {searchQuery.length <= 1 ? (
-                <>
-                  <p className="text-xs text-charcoal-lighter font-semibold tracking-widest uppercase mb-3">
-                    {t('search.suggestions')}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {SUGGESTIONS.map(s => (
-                      <button
-                        key={s}
-                        onClick={() => setSearchQuery(s)}
-                        className="px-4 py-2 rounded-full bg-bg border border-bg-dark text-sm text-charcoal-light hover:bg-brand hover:text-white hover:border-brand transition-all duration-200"
+            {/* Results */}
+            {searchQuery.trim().length > 0 && (
+              <div className="p-5 max-h-96 overflow-y-auto">
+                {searchResults.length > 0 ? (
+                  <div className="flex flex-col gap-1">
+                    {searchResults.map(result => (
+                      <Link
+                        key={result.id}
+                        to={result.url}
+                        onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                        className="flex items-start gap-3 p-3 rounded-sm hover:bg-bg transition-colors duration-150 group"
                       >
-                        {s}
-                      </button>
+                        <div className={`mt-0.5 w-7 h-7 rounded-sm flex items-center justify-center flex-shrink-0 ${
+                          result.type === 'service' ? 'bg-brand/10 text-brand' :
+                          result.type === 'offer' ? 'bg-gold/20 text-gold-dark' :
+                          'bg-charcoal/10 text-charcoal'
+                        }`}>
+                          {result.type === 'service' ? <Package className="w-3.5 h-3.5" /> :
+                           result.type === 'offer' ? <span className="text-[10px] font-bold">%</span> :
+                           <Globe className="w-3.5 h-3.5" />}
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-charcoal group-hover:text-brand transition-colors">
+                            {result.title}
+                          </div>
+                          <div className="text-xs text-charcoal-lighter">{result.desc}</div>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-charcoal-lighter ml-auto self-center opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </Link>
                     ))}
                   </div>
-                </>
-              ) : searchResults.length > 0 ? (
-                <div className="flex flex-col gap-1">
-                  {searchResults.map(result => (
-                    <Link
-                      key={result.id}
-                      to={result.url}
-                      onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                      className="flex items-start gap-3 p-3 rounded-sm hover:bg-bg transition-colors duration-150 group"
-                    >
-                      <div className={`mt-0.5 w-7 h-7 rounded-sm flex items-center justify-center flex-shrink-0 ${
-                        result.type === 'service' ? 'bg-brand/10 text-brand' :
-                        result.type === 'offer' ? 'bg-gold/20 text-gold-dark' :
-                        'bg-charcoal/10 text-charcoal'
-                      }`}>
-                        {result.type === 'service' ? <Package className="w-3.5 h-3.5" /> :
-                         result.type === 'offer' ? <span className="text-[10px] font-bold">%</span> :
-                         <Globe className="w-3.5 h-3.5" />}
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold text-charcoal group-hover:text-brand transition-colors">
-                          {result.title}
-                        </div>
-                        <div className="text-xs text-charcoal-lighter">{result.desc}</div>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-charcoal-lighter ml-auto self-center opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-charcoal-lighter">
-                  <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">{t('search.noresult')}</p>
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="text-center py-8 text-charcoal-lighter">
+                    <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">{t('search.noresult')}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
