@@ -4,12 +4,17 @@ import { Lock, Mail, Shield, AlertCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const AdminLogin: React.FC = () => {
-  const [email, setEmail] = useState('admin@ordercenter.iq');
-  const [password, setPassword] = useState('admin123');
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
-  const navigate = useNavigate();
+
+  if (isAuthenticated) {
+    navigate('/admin', { replace: true });
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +24,7 @@ export const AdminLogin: React.FC = () => {
       await login(email, password);
       navigate('/admin');
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(err.message || 'Login failed. Invalid admin credentials.');
     } finally {
       setLoading(false);
     }
@@ -86,10 +91,18 @@ export const AdminLogin: React.FC = () => {
           </div>
 
           {/* Demo quick info helper */}
-          <div className="bg-[#EBEAE8] p-3 rounded text-[11px] text-slate-600 border border-slate-200">
-            <span className="font-bold text-[#711612]">Demo Credentials Pre-filled:</span>
-            <br />
-            Email: <code className="font-mono bg-white px-1 rounded">admin@ordercenter.iq</code> | Pass: <code className="font-mono bg-white px-1 rounded">admin123</code>
+          <div className="bg-[#EBEAE8] p-3 rounded text-[11px] text-slate-600 border border-slate-200 flex items-center justify-between">
+            <div>
+              <span className="font-bold text-[#711612]">Admin Access Required</span>
+              <div className="text-[10px] text-slate-500 font-mono mt-0.5">admin@ordercenter.iq / admin123</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setEmail('admin@ordercenter.iq'); setPassword('admin123'); }}
+              className="px-2.5 py-1 text-[10px] font-bold bg-[#711612] text-white hover:bg-[#57100d] rounded transition"
+            >
+              Auto-fill Demo
+            </button>
           </div>
 
           <button
