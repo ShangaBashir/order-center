@@ -10,7 +10,90 @@ export interface LanguageConfig {
   flag: string;
 }
 
-// Tracking types
+// Order Status Enum
+export type OrderStatus =
+  | 'Order Received'
+  | 'Order Confirmed'
+  | 'Purchased'
+  | 'Preparing'
+  | 'Shipped'
+  | 'In Transit'
+  | 'Arrived'
+  | 'Out for Delivery'
+  | 'Delivered'
+  | 'Cancelled';
+
+export const ALL_ORDER_STATUSES: OrderStatus[] = [
+  'Order Received',
+  'Order Confirmed',
+  'Purchased',
+  'Preparing',
+  'Shipped',
+  'In Transit',
+  'Arrived',
+  'Out for Delivery',
+  'Delivered',
+  'Cancelled'
+];
+
+export interface StatusHistoryItem {
+  status: OrderStatus;
+  date: string;
+  note?: string;
+}
+
+export interface AdminOrder {
+  _id?: string;
+  orderId: string;
+  customerName: string;
+  phone: string;
+  email?: string;
+  address: string;
+  productName: string;
+  productUrl?: string;
+  productImage?: string;
+  quantity: number;
+  productPrice: number;
+  shippingFee: number;
+  totalPrice: number;
+  currency: string;
+  originCountry: string;
+  destinationCountry: string;
+  shippingMethod: string;
+  trackingNumber?: string;
+  estimatedDelivery?: string;
+  status: OrderStatus;
+  statusHistory: StatusHistoryItem[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PublicTrackingData {
+  orderId: string;
+  customerName?: string;
+  productName: string;
+  productImage?: string;
+  quantity: number;
+  currency: string;
+  totalPrice: number;
+  originCountry: string;
+  destinationCountry: string;
+  shippingMethod: string;
+  trackingNumber?: string;
+  estimatedDelivery?: string;
+  status: OrderStatus;
+  statusHistory: StatusHistoryItem[];
+  updatedAt?: string;
+}
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+// Legacy Tracking types
 export interface TrackingStep {
   id: string;
   label: string;
@@ -32,7 +115,6 @@ export interface TrackingInfo {
   steps: TrackingStep[];
 }
 
-// Search types
 export interface SearchResult {
   id: string;
   type: 'service' | 'offer' | 'page' | 'info';
@@ -41,7 +123,6 @@ export interface SearchResult {
   url: string;
 }
 
-// Service types
 export interface Service {
   id: string;
   icon: string;
@@ -53,7 +134,6 @@ export interface Service {
   descriptionAr: string;
 }
 
-// Offer types
 export interface Offer {
   id: string;
   title: string;
@@ -65,7 +145,6 @@ export interface Offer {
   color?: string;
 }
 
-// Contact types
 export interface ContactForm {
   fullName: string;
   email: string;
