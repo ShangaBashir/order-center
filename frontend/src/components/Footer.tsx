@@ -31,16 +31,13 @@ const Footer: React.FC = () => {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center gap-3 mb-5 group">
-              <div className="w-10 h-10 rounded-sm bg-brand flex items-center justify-center shadow-premium">
-                <svg viewBox="0 0 40 40" className="w-5 h-5 fill-white">
-                  <path d="M20 4L36 12V28L20 36L4 28V12L20 4Z" strokeWidth="1.5" stroke="rgba(255,255,255,0.4)" fill="none"/>
-                  <path d="M20 4L36 12L20 20L4 12L20 4Z" fill="rgba(255,255,255,0.9)"/>
-                  <path d="M20 20V36L4 28V12L20 20Z" fill="rgba(255,255,255,0.5)"/>
-                  <path d="M20 20V36L36 28V12L20 20Z" fill="rgba(255,255,255,0.7)"/>
-                </svg>
-              </div>
+              <img
+                src="/logo.png"
+                alt="Order Center Logo"
+                className="h-14 w-auto object-contain"
+              />
               <div>
-                <div className="font-display font-bold text-white text-lg leading-none">OrderCenter</div>
+                <div className="font-display font-bold text-white text-lg leading-none">Order Center</div>
                 <div className="text-[10px] text-white/40 font-medium tracking-[0.15em] uppercase mt-0.5">
                   Global Shopping & Shipping
                 </div>
@@ -126,15 +123,16 @@ const Footer: React.FC = () => {
             </h4>
             <ul className="flex flex-col gap-4">
               <li>
-                <a href="tel:+9647501234567" className="flex items-start gap-3 group">
-                  <div className="w-8 h-8 rounded-sm bg-white/8 flex items-center justify-center flex-shrink-0 group-hover:bg-brand transition-colors">
-                    <Phone className="w-3.5 h-3.5 text-white/50 group-hover:text-white" />
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-sm bg-white/8 flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-3.5 h-3.5 text-white/50" />
                   </div>
                   <div>
                     <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">Phone</div>
-                    <div className="text-sm text-white/60 group-hover:text-white transition-colors">+964 750 123 4567</div>
+                    <a href="tel:07701566233" className="block text-sm text-white/60 hover:text-white transition-colors">07701566233</a>
+                    <a href="tel:07511946651" className="block text-sm text-white/60 hover:text-white transition-colors">07511946651</a>
                   </div>
-                </a>
+                </div>
               </li>
               <li>
                 <a href="mailto:info@ordercenter.iq" className="flex items-start gap-3 group">
@@ -148,13 +146,13 @@ const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <a href="https://wa.me/9647501234567" target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 group">
+                <a href="https://wa.me/07701566233" target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 group">
                   <div className="w-8 h-8 rounded-sm bg-white/8 flex items-center justify-center flex-shrink-0 group-hover:bg-green-600 transition-colors">
                     <MessageCircle className="w-3.5 h-3.5 text-white/50 group-hover:text-white" />
                   </div>
                   <div>
                     <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">WhatsApp</div>
-                    <div className="text-sm text-white/60 group-hover:text-white transition-colors">+964 750 123 4567</div>
+                    <div className="text-sm text-white/60 group-hover:text-white transition-colors">07701566233</div>
                   </div>
                 </a>
               </li>
@@ -165,7 +163,7 @@ const Footer: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">Location</div>
-                    <div className="text-sm text-white/60">Erbil, Kurdistan Region, Iraq</div>
+                    <div className="text-sm text-white/60">Sulaimanyiah, Kurdistan Region, Iraq</div>
                   </div>
                 </div>
               </li>
