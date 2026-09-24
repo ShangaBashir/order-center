@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShoppingBag, Clock, Truck, CheckCircle2, XCircle, Search, PlusCircle,
-  Eye, RefreshCw, ArrowUpRight, TrendingUp
+  Eye, ArrowUpRight, TrendingUp
 } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
 import { orderApi } from '../api';
@@ -100,13 +100,6 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={loadOrders}
-              className="p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-sm transition"
-              title="Refresh order data"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
             <Link
               to="/admin/add-order"
               className="px-4 py-2.5 bg-[#711612] hover:bg-[#57100d] text-white text-xs font-bold uppercase tracking-wider rounded-md shadow flex items-center gap-2 border border-[#D4AF37]/30 transition"
