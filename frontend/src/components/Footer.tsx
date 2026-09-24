@@ -44,6 +44,10 @@ const Footer: React.FC = () => {
               </div>
             </Link>
 
+            <p className="text-white/50 text-sm leading-relaxed mb-6">
+              {t('footer.desc')}
+            </p>
+
             {/* Social */}
             <div className="flex gap-2">
               {[
