@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  Phone, Mail, MessageCircle, MapPin, Clock, Instagram,
-  Facebook, Twitter, Send, CheckCircle, AlertCircle, Link2
+  Phone, Mail, MessageCircle, MapPin, CheckCircle, AlertCircle, Link2
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -65,28 +64,35 @@ const ContactPage: React.FC = () => {
     {
       icon: Phone,
       label: 'Phone',
-      value: '+964 750 123 4567',
-      href: 'tel:+9647501234567',
+      value: '0770 156 6233',
+      href: 'tel:+9647701566233',
+      color: 'bg-brand/10 text-brand hover:bg-brand hover:text-white',
+    },
+    {
+      icon: Phone,
+      label: 'Phone',
+      value: '0751 194 6651',
+      href: 'tel:+9647511946651',
       color: 'bg-brand/10 text-brand hover:bg-brand hover:text-white',
     },
     {
       icon: Mail,
       label: 'Email',
-      value: 'info@ordercenter.iq',
-      href: 'mailto:info@ordercenter.iq',
+      value: 'Wazhamyassin98@gmail.com',
+      href: 'mailto:Wazhamyassin98@gmail.com',
       color: 'bg-brand/10 text-brand hover:bg-brand hover:text-white',
     },
     {
       icon: MessageCircle,
       label: 'WhatsApp',
-      value: '+964 750 123 4567',
-      href: 'https://wa.me/9647501234567',
+      value: '0770 156 6233',
+      href: 'https://wa.me/9647701566233',
       color: 'bg-green-50 text-green-700 hover:bg-green-600 hover:text-white',
     },
     {
       icon: MapPin,
       label: 'Location',
-      value: 'Erbil, Kurdistan Region, Iraq',
+      value: 'Bakhtyari, near Falafelo Fast Food, Sulaimaniyah, Iraq',
       href: '#',
       color: 'bg-gold/10 text-gold-dark hover:bg-gold hover:text-white',
     },
@@ -260,13 +266,13 @@ const ContactPage: React.FC = () => {
                       const Icon = item.icon;
                       return (
                         <a
-                          key={item.label}
+                          key={`${item.label}-${item.value}`}
                           href={item.href}
                           target={item.href.startsWith('http') ? '_blank' : undefined}
                           rel="noopener noreferrer"
                           className="flex items-center gap-4 group"
                         >
-                          <div className={`w-10 h-10 rounded-sm flex items-center justify-center transition-all duration-200 ${item.color}`}>
+                          <div className={`w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0 transition-all duration-200 ${item.color}`}>
                             <Icon className="w-4 h-4" />
                           </div>
                           <div>
@@ -276,55 +282,6 @@ const ContactPage: React.FC = () => {
                         </a>
                       );
                     })}
-                  </div>
-                </div>
-              </FadeSection>
-
-              {/* Business Hours */}
-              <FadeSection delay={180}>
-                <div className="bg-white rounded-sm border border-bg-dark shadow-card p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Clock className="w-4 h-4 text-brand" />
-                    <h3 className="font-display font-bold text-charcoal text-base">{t('contact.hours')}</h3>
-                  </div>
-                  <div className="space-y-2">
-                    {[
-                      { day: 'Monday – Friday', hours: '9:00 AM – 8:00 PM' },
-                      { day: 'Saturday', hours: '10:00 AM – 6:00 PM' },
-                      { day: 'Sunday', hours: 'Closed' },
-                    ].map((item) => (
-                      <div key={item.day} className="flex justify-between items-center py-1.5 border-b border-bg-dark last:border-0">
-                        <span className="text-sm text-charcoal-lighter">{item.day}</span>
-                        <span className={`text-sm font-medium ${item.hours === 'Closed' ? 'text-red-500' : 'text-charcoal'}`}>
-                          {item.hours}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </FadeSection>
-
-              {/* Social Media */}
-              <FadeSection delay={260}>
-                <div className="bg-white rounded-sm border border-bg-dark shadow-card p-6">
-                  <h3 className="font-display font-bold text-charcoal text-base mb-4">Follow Us</h3>
-                  <div className="grid grid-cols-4 gap-3">
-                    {[
-                      { icon: Instagram, label: 'Instagram', color: 'hover:bg-pink-600' },
-                      { icon: Facebook, label: 'Facebook', color: 'hover:bg-blue-600' },
-                      { icon: Twitter, label: 'X / Twitter', color: 'hover:bg-charcoal' },
-                      { icon: Send, label: 'Telegram', color: 'hover:bg-sky-500' },
-                    ].map(({ icon: Icon, label, color }) => (
-                      <a
-                        key={label}
-                        href="#"
-                        title={label}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-sm bg-bg border border-bg-dark text-charcoal-lighter hover:text-white ${color} transition-all duration-200`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        <span className="text-[10px] font-medium">{label.split(' ')[0]}</span>
-                      </a>
-                    ))}
                   </div>
                 </div>
               </FadeSection>
@@ -350,7 +307,7 @@ const ContactPage: React.FC = () => {
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <a
-                    href="https://wa.me/9647501234567"
+                    href="https://wa.me/9647701566233"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-5 py-2.5 rounded-sm bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors"
@@ -359,7 +316,7 @@ const ContactPage: React.FC = () => {
                     Send via WhatsApp
                   </a>
                   <a
-                    href="mailto:info@ordercenter.iq"
+                    href="mailto:Wazhamyassin98@gmail.com"
                     className="flex items-center gap-2 px-5 py-2.5 rounded-sm border-2 border-brand text-brand text-sm font-semibold hover:bg-brand hover:text-white transition-all duration-200"
                   >
                     <Mail className="w-4 h-4" />

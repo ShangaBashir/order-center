@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MessageCircle, MapPin, Instagram, Facebook, Twitter, Send } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 const Footer: React.FC = () => {
@@ -47,25 +47,6 @@ const Footer: React.FC = () => {
             <p className="text-white/50 text-sm leading-relaxed mb-6">
               {t('footer.desc')}
             </p>
-
-            {/* Social */}
-            <div className="flex gap-2">
-              {[
-                { icon: Instagram, href: '#', label: 'Instagram' },
-                { icon: Facebook, href: '#', label: 'Facebook' },
-                { icon: Twitter, href: '#', label: 'Twitter' },
-                { icon: Send, href: '#', label: 'Telegram' },
-              ].map(({ icon: Icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="w-9 h-9 rounded-sm bg-white/8 flex items-center justify-center text-white/50 hover:bg-brand hover:text-white transition-all duration-200"
-                >
-                  <Icon className="w-4 h-4" />
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Company Links */}
@@ -131,19 +112,19 @@ const Footer: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">Phone</div>
-                    <a href="tel:07701566233" className="block text-sm text-white/60 hover:text-white transition-colors">07701566233</a>
-                    <a href="tel:07511946651" className="block text-sm text-white/60 hover:text-white transition-colors">07511946651</a>
+                    <a href="tel:+9647701566233" className="block text-sm text-white/60 hover:text-white transition-colors">0770 156 6233</a>
+                    <a href="tel:+9647511946651" className="block text-sm text-white/60 hover:text-white transition-colors">0751 194 6651</a>
                   </div>
                 </div>
               </li>
               <li>
-                <a href="mailto:info@ordercenter.iq" className="flex items-start gap-3 group">
+                <a href="mailto:Wazhamyassin98@gmail.com" className="flex items-start gap-3 group">
                   <div className="w-8 h-8 rounded-sm bg-white/8 flex items-center justify-center flex-shrink-0 group-hover:bg-brand transition-colors">
                     <Mail className="w-3.5 h-3.5 text-white/50 group-hover:text-white" />
                   </div>
                   <div>
                     <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">Email</div>
-                    <div className="text-sm text-white/60 group-hover:text-white transition-colors">info@ordercenter.iq</div>
+                    <div className="text-sm text-white/60 group-hover:text-white transition-colors">Wazhamyassin98@gmail.com</div>
                   </div>
                 </a>
               </li>
@@ -155,7 +136,7 @@ const Footer: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">Location</div>
-                    <div className="text-sm text-white/60">Sulaimanyiah, Kurdistan Region, Iraq</div>
+                    <div className="text-sm text-white/60">Bakhtyari, near Falafelo Fast Food, Sulaimaniyah, Iraq</div>
                   </div>
                 </div>
               </li>
