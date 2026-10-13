@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Search, Package, Globe, X, Menu, MapPin,
-  ArrowRight, Clock, CheckCircle, AlertCircle,
+  Search, Package, Globe, X, Menu,
+  ArrowRight, Clock, AlertCircle,
   User as UserIcon, LogOut, ShieldCheck, Hash
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { Language } from '../types';
+import { Language, PublicTrackingData } from '../types';
 import { LogoutModal } from './LogoutModal';
+import { orderApi } from '../api';
+import { formatDisplayDate } from '../utils/formatters';
+import { StatusTimeline } from './StatusTimeline';
 
 // ─── Language Config ────────────────────────────────────────────────────────
 const LANGUAGES: { code: Language; name: string; nativeName: string; flag: string }[] = [
@@ -31,14 +34,6 @@ const SEARCH_DATA = [
   { id: '10', title: 'Alibaba Purchasing', desc: 'Wholesale from Alibaba made easy', url: '/services', type: 'service' },
 ];
 
-
-// ─── Tracking mock data ───────────────────────────────────────────────────────
-const TRACKING_STEPS = [
-  { id: 's1', key: 'tracking.s1', icon: CheckCircle },
-  { id: 's2', key: 'tracking.s2', icon: MapPin },
-  { id: 's3', key: 'tracking.s3', icon: CheckCircle },
-];
-
 // ─── Header Component ─────────────────────────────────────────────────────────
 const Header: React.FC = () => {
   const { t, language, setLanguage, direction } = useLanguage();
@@ -55,6 +50,8 @@ const Header: React.FC = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingResult, setTrackingResult] = useState<null | 'found' | 'notfound'>(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingData, setTrackingData] = useState<PublicTrackingData | null>(null);
+  const [trackingError, setTrackingError] = useState('');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const trackingInputRef = useRef<HTMLInputElement>(null);
@@ -120,19 +117,33 @@ const Header: React.FC = () => {
       )
     : [];
 
-  // Tracking submit
-  const handleTrack = () => {
-    if (!trackingNumber.trim()) return;
+  // Real Tracking submit
+  const handleTrack = async () => {
+    const q = trackingNumber.trim();
+    if (!q) return;
     setTrackingLoading(true);
     setTrackingResult(null);
-    setTimeout(() => {
+    setTrackingData(null);
+    setTrackingError('');
+    try {
+      const data = await orderApi.trackOrder(q);
+      setTrackingData(data);
+      setTrackingResult('found');
+    } catch (err: any) {
+      setTrackingResult('notfound');
+      setTrackingError(err?.message || 'Order not found. Please verify your Order ID or Tracking Number.');
+    } finally {
       setTrackingLoading(false);
-      // Demo: any 6+ char number shows result
-      setTrackingResult(trackingNumber.trim().length >= 4 ? 'found' : 'notfound');
-    }, 1500);
+    }
   };
 
-  const activeStep = 5; // 0-indexed, currently "Shipped"
+  const handleCloseTracking = () => {
+    setTrackingOpen(false);
+    setTrackingResult(null);
+    setTrackingNumber('');
+    setTrackingData(null);
+    setTrackingError('');
+  };
 
   const isActive = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
@@ -429,7 +440,7 @@ const Header: React.FC = () => {
 
       {/* ─── TRACKING OVERLAY ────────────────────────────────────────────────── */}
       {trackingOpen && (
-        <div className="overlay" onClick={() => { setTrackingOpen(false); setTrackingResult(null); setTrackingNumber(''); }}>
+        <div className="overlay" onClick={handleCloseTracking}>
           <div
             className="modal w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
@@ -445,7 +456,7 @@ const Header: React.FC = () => {
                 </h2>
               </div>
               <button
-                onClick={() => { setTrackingOpen(false); setTrackingResult(null); setTrackingNumber(''); }}
+                onClick={handleCloseTracking}
                 className="p-1.5 hover:text-brand transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -462,7 +473,7 @@ const Header: React.FC = () => {
                   onChange={e => setTrackingNumber(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleTrack()}
                   placeholder={t('tracking.placeholder')}
-                  className="input-field flex-1"
+                  className="input-field flex-1 font-mono font-medium"
                   dir={direction}
                 />
                 <button
@@ -485,83 +496,116 @@ const Header: React.FC = () => {
                   <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-semibold text-red-700">Order not found</p>
-                    <p className="text-xs text-red-500">Please check your tracking number and try again.</p>
+                    <p className="text-xs text-red-500">{trackingError || 'Please check your Order ID or Tracking Number and try again.'}</p>
                   </div>
                 </div>
               )}
 
               {/* Result: Found */}
-              {trackingResult === 'found' && (
-                <div className="mt-5 animate-fade-in">
+              {trackingResult === 'found' && trackingData && (
+                <div className="mt-5 animate-fade-in space-y-4">
                   {/* Order Info Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-                    {[
-                      { label: t('tracking.order'), value: trackingNumber.toUpperCase() },
-                      { label: t('tracking.status'), value: 'In Office', highlight: true },
-                      { label: t('tracking.product'), value: 'SHEIN Women\'s Dress' },
-                      { label: t('tracking.origin'), value: 'Shanghai, China' },
-                      { label: t('tracking.destination'), value: 'Erbil, Iraq' },
-                      { label: t('tracking.estimated'), value: 'Sep 30, 2026' },
-                    ].map((item, i) => (
-                      <div key={i} className="p-3 rounded-sm bg-bg border border-bg-dark">
-                        <div className="text-[10px] font-semibold text-charcoal-lighter tracking-widest uppercase mb-1">
-                          {item.label}
-                        </div>
-                        <div className={`text-sm font-semibold ${item.highlight ? 'text-gold-dark' : 'text-charcoal'}`}>
-                          {item.value}
-                        </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="p-3 rounded-sm bg-bg border border-bg-dark">
+                      <div className="text-[10px] font-semibold text-charcoal-lighter tracking-widest uppercase mb-1">
+                        {t('tracking.order')}
                       </div>
-                    ))}
+                      <div className="text-sm font-bold font-mono text-brand truncate" title={trackingData.orderId}>
+                        {trackingData.orderId}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-sm bg-bg border border-bg-dark">
+                      <div className="text-[10px] font-semibold text-charcoal-lighter tracking-widest uppercase mb-1">
+                        Customer
+                      </div>
+                      <div className="text-sm font-semibold text-charcoal truncate" title={trackingData.customerName || 'Customer'}>
+                        {trackingData.customerName || 'Customer'}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-sm bg-bg border border-bg-dark">
+                      <div className="text-[10px] font-semibold text-charcoal-lighter tracking-widest uppercase mb-1">
+                        {t('tracking.status')}
+                      </div>
+                      <div className="text-sm font-bold text-gold-dark">
+                        {trackingData.status}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-sm bg-bg border border-bg-dark sm:col-span-2">
+                      <div className="text-[10px] font-semibold text-charcoal-lighter tracking-widest uppercase mb-1">
+                        {t('tracking.product')}
+                      </div>
+                      <div className="text-sm font-semibold text-charcoal truncate" title={trackingData.productName}>
+                        {trackingData.productName}
+                        {trackingData.quantity > 1 ? ` (x${trackingData.quantity})` : ''}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-sm bg-bg border border-bg-dark">
+                      <div className="text-[10px] font-semibold text-charcoal-lighter tracking-widest uppercase mb-1">
+                        {t('tracking.estimated')}
+                      </div>
+                      <div className="text-sm font-semibold text-brand">
+                        {formatDisplayDate(trackingData.estimatedDelivery)}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-sm bg-bg border border-bg-dark">
+                      <div className="text-[10px] font-semibold text-charcoal-lighter tracking-widest uppercase mb-1">
+                        {t('tracking.origin')}
+                      </div>
+                      <div className="text-sm font-semibold text-charcoal">
+                        {trackingData.originCountry || 'China'}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-sm bg-bg border border-bg-dark">
+                      <div className="text-[10px] font-semibold text-charcoal-lighter tracking-widest uppercase mb-1">
+                        {t('tracking.destination')}
+                      </div>
+                      <div className="text-sm font-semibold text-charcoal">
+                        {trackingData.destinationCountry || 'Iraq'}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-sm bg-bg border border-bg-dark">
+                      <div className="text-[10px] font-semibold text-charcoal-lighter tracking-widest uppercase mb-1">
+                        Shipping Method
+                      </div>
+                      <div className="text-sm font-semibold text-charcoal">
+                        {trackingData.shippingMethod || 'Express Air'}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Timeline */}
-                  <div className="border border-bg-dark rounded-sm p-4">
+                  {/* Real Status Timeline */}
+                  <div className="border border-bg-dark rounded-sm p-4 bg-white">
                     <h3 className="text-sm font-semibold text-charcoal mb-4 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-brand" />
                       Order Timeline
                     </h3>
-                    <div className="flex flex-col gap-0">
-                      {TRACKING_STEPS.map((step, i) => {
-                        const isCompleted = i < activeStep;
-                        const isCurrentStep = i === activeStep;
-                        return (
-                          <div key={step.id} className="flex items-start gap-3">
-                            <div className="flex flex-col items-center">
-                              <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 mt-0.5 transition-colors ${
-                                isCompleted ? 'bg-brand border-brand' :
-                                isCurrentStep ? 'bg-gold border-gold' :
-                                'bg-white border-bg-dark'
-                              }`} />
-                              {i < TRACKING_STEPS.length - 1 && (
-                                <div className={`w-0.5 h-6 ${isCompleted ? 'bg-brand' : 'bg-bg-dark'}`} />
-                              )}
-                            </div>
-                            <div className="pb-4">
-                              <p className={`text-sm font-medium leading-none ${
-                                isCurrentStep ? 'text-gold-dark' :
-                                isCompleted ? 'text-brand' :
-                                'text-charcoal-lighter'
-                              }`}>
-                                {t(step.key)}
-                              </p>
-                              {isCurrentStep && (
-                                <p className="text-xs text-charcoal-lighter mt-1">Sep 24, 2026 · 10:30 AM</p>
-                              )}
-                              {isCompleted && (
-                                <p className="text-xs text-charcoal-lighter/70 mt-1">
-                                  Sep {18 + i}, 2026
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <StatusTimeline
+                      currentStatus={trackingData.status}
+                      statusHistory={trackingData.statusHistory}
+                      showNotes={false}
+                    />
                   </div>
 
-                  <p className="text-xs text-charcoal-lighter mt-3 text-right">
-                    {t('tracking.updated')}: Sep 24, 2026 · 12:00 PM
-                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                    <p className="text-xs text-charcoal-lighter">
+                      {t('tracking.updated')}: {trackingData.updatedAt ? new Date(trackingData.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                    </p>
+                    <Link
+                      to={`/tracking?id=${encodeURIComponent(trackingData.orderId)}`}
+                      onClick={handleCloseTracking}
+                      className="inline-flex items-center gap-2 text-xs font-bold text-brand hover:text-brand-dark hover:underline transition"
+                    >
+                      <span>View Full Live Tracking Page</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>

@@ -155,7 +155,9 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       shippingMethod,
       trackingNumber,
       estimatedDelivery,
-      status: initialStatus
+      status: initialStatus,
+      statusHistory,
+      notes: req.body.notes || ''
     });
 
     const finalCreated = newOrder ? (newOrder.toObject ? newOrder.toObject() : newOrder) : memOrder;
@@ -208,12 +210,15 @@ router.get('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
     let order: any = null;
 
     try {
-      order = await Order.findOne({
-        $or: [
-          { orderId: { $regex: new RegExp(`^${rawId}$`, 'i') } },
-          { _id: rawId }
-        ]
-      }).lean();
+      const escaped = rawId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const orClauses: any[] = [
+        { orderId: { $regex: new RegExp(`^${escaped}$`, 'i') } },
+        { trackingNumber: { $regex: new RegExp(`^${escaped}$`, 'i') } }
+      ];
+      if (mongoose.Types.ObjectId.isValid(rawId)) {
+        orClauses.push({ _id: rawId });
+      }
+      order = await Order.findOne({ $or: orClauses }).lean();
     } catch (e) {}
 
     if (!order) {

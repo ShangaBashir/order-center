@@ -190,10 +190,24 @@ export const PublicTrackingPage: React.FC = () => {
                     Order ID: {trackingData.orderId}
                   </span>
                   <h2 className="text-xl sm:text-2xl font-bold">{trackingData.productName}</h2>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs text-white/80">
+                  <div className="flex flex-wrap items-center gap-2.5 mt-2 text-xs text-white/80">
+                    {trackingData.customerName && (
+                      <>
+                        <span className="font-bold text-white bg-white/20 px-2.5 py-0.5 rounded-full border border-white/30">
+                          Customer: {trackingData.customerName}
+                        </span>
+                        <span>•</span>
+                      </>
+                    )}
                     <span>Quantity: {trackingData.quantity}</span>
                     <span>•</span>
                     <span className="font-bold text-[#D4AF37]">Total: {formatPriceWithIqd(trackingData.totalPrice).combinedStr}</span>
+                    {trackingData.shippingMethod && (
+                      <>
+                        <span>•</span>
+                        <span>Method: {trackingData.shippingMethod}</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -204,7 +218,7 @@ export const PublicTrackingPage: React.FC = () => {
                 }`}>
                   <div className="flex items-center justify-end gap-1.5 mb-1">
                     <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-2 rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
                     <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider">
@@ -220,7 +234,11 @@ export const PublicTrackingPage: React.FC = () => {
               </div>
 
               {/* Shipping Overview Cards */}
-              <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/70">
+              <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50/70">
+                <div className="bg-white p-3.5 rounded-md border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Customer</span>
+                  <span className="text-xs font-bold text-slate-800 block mt-0.5 truncate" title={trackingData.customerName || 'N/A'}>{trackingData.customerName || 'N/A'}</span>
+                </div>
                 <div className="bg-white p-3.5 rounded-md border border-slate-200">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Origin</span>
                   <span className="text-xs font-bold text-slate-800 block mt-0.5">{trackingData.originCountry}</span>

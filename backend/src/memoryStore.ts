@@ -279,17 +279,17 @@ class MemoryStore {
   public findOrder(query: string): OrderData | undefined {
     const q = query.trim().toLowerCase();
     return this.orders.find(o => 
-      o.orderId.toLowerCase() === q || 
+      (o.orderId && o.orderId.toLowerCase() === q) || 
       (o.trackingNumber && o.trackingNumber.toLowerCase() === q) ||
       o._id === q
     );
   }
 
   public addOrder(data: Partial<OrderData>): OrderData {
-    const newOrderId = this.getNextOrderId();
+    const newOrderId = data.orderId ? data.orderId.trim() : this.getNextOrderId();
     const now = new Date().toISOString();
     const newOrder: OrderData = {
-      _id: `ord_${Date.now()}`,
+      _id: data._id || `ord_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       orderId: newOrderId,
       customerName: data.customerName || '',
       phone: data.phone || '',
@@ -301,7 +301,7 @@ class MemoryStore {
       quantity: Number(data.quantity) || 1,
       productPrice: Number(data.productPrice) || 0,
       shippingFee: Number(data.shippingFee) || 0,
-      totalPrice: (Number(data.quantity) || 1) * (Number(data.productPrice) || 0) + (Number(data.shippingFee) || 0),
+      totalPrice: data.totalPrice !== undefined ? Number(data.totalPrice) : ((Number(data.quantity) || 1) * (Number(data.productPrice) || 0) + (Number(data.shippingFee) || 0)),
       currency: data.currency || 'USD',
       originCountry: data.originCountry || 'China',
       destinationCountry: data.destinationCountry || 'Iraq',
@@ -309,16 +309,16 @@ class MemoryStore {
       trackingNumber: data.trackingNumber || '',
       estimatedDelivery: data.estimatedDelivery || '',
       status: data.status || 'Purchased',
-      statusHistory: [
+      statusHistory: data.statusHistory && data.statusHistory.length > 0 ? data.statusHistory : [
         {
           status: data.status || 'Purchased',
           date: now,
-          note: 'Order manually created in admin dashboard'
+          note: 'Order registered in admin dashboard'
         }
       ],
       notes: data.notes || '',
-      createdAt: now,
-      updatedAt: now,
+      createdAt: data.createdAt || now,
+      updatedAt: data.updatedAt || now,
     };
 
     this.orders.unshift(newOrder);
@@ -326,7 +326,8 @@ class MemoryStore {
   }
 
   public updateOrder(orderId: string, updates: Partial<OrderData>): OrderData | null {
-    const index = this.orders.findIndex(o => o.orderId.toLowerCase() === orderId.toLowerCase() || o._id === orderId);
+    const q = orderId.trim().toLowerCase();
+    const index = this.orders.findIndex(o => (o.orderId && o.orderId.toLowerCase() === q) || (o.trackingNumber && o.trackingNumber.toLowerCase() === q) || o._id === orderId);
     if (index === -1) return null;
 
     const ord = this.orders[index];
@@ -347,7 +348,8 @@ class MemoryStore {
   }
 
   public updateOrderStatus(orderId: string, status: string, note?: string): OrderData | null {
-    const index = this.orders.findIndex(o => o.orderId.toLowerCase() === orderId.toLowerCase() || o._id === orderId);
+    const q = orderId.trim().toLowerCase();
+    const index = this.orders.findIndex(o => (o.orderId && o.orderId.toLowerCase() === q) || (o.trackingNumber && o.trackingNumber.toLowerCase() === q) || o._id === orderId);
     if (index === -1) return null;
 
     const ord = this.orders[index];
@@ -364,8 +366,9 @@ class MemoryStore {
   }
 
   public deleteOrder(orderId: string): boolean {
+    const q = orderId.trim().toLowerCase();
     const initialLen = this.orders.length;
-    this.orders = this.orders.filter(o => o.orderId.toLowerCase() !== orderId.toLowerCase() && o._id !== orderId);
+    this.orders = this.orders.filter(o => (o.orderId && o.orderId.toLowerCase() !== q) && (o.trackingNumber && o.trackingNumber.toLowerCase() !== q) && o._id !== orderId);
     return this.orders.length < initialLen;
   }
 

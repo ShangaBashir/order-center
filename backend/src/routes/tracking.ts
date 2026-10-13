@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import Order from '../models/Order';
 import { memoryStore } from '../memoryStore';
 import { realtimeHub } from '../realtime';
@@ -31,12 +32,15 @@ router.get('/:orderId', async (req, res) => {
     
     // Try MongoDB if connected
     try {
-      order = await Order.findOne({
-        $or: [
-          { orderId: { $regex: new RegExp(`^${rawId}$`, 'i') } },
-          { trackingNumber: { $regex: new RegExp(`^${rawId}$`, 'i') } }
-        ]
-      }).lean();
+      const escaped = rawId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const orClauses: any[] = [
+        { orderId: { $regex: new RegExp(`^${escaped}$`, 'i') } },
+        { trackingNumber: { $regex: new RegExp(`^${escaped}$`, 'i') } }
+      ];
+      if (mongoose.Types.ObjectId.isValid(rawId)) {
+        orClauses.push({ _id: rawId });
+      }
+      order = await Order.findOne({ $or: orClauses }).lean();
     } catch (e) {
       // Fallback memory search
     }
