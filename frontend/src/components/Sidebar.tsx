@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, ShoppingBag, PlusCircle, Search, Users, Settings, LogOut, ShieldCheck, X, Github
+  LayoutDashboard, ShoppingBag, PlusCircle, Search, Users, Settings, LogOut, ShieldCheck, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -91,18 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
       </nav>
 
       {/* Bottom Footer Action */}
-      <div className="p-4 border-t border-white/10 bg-black/40 backdrop-blur-md space-y-2">
-        <a
-          href="https://github.com/ShangaBashir/order-center"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition border border-white/10 group"
-          title="Open GitHub Repository"
-        >
-          <Github className="w-4 h-4 text-[#D4AF37] group-hover:scale-110 transition-transform" />
-          <span>GitHub Repository</span>
-        </a>
-
+      <div className="p-4 border-t border-white/10 bg-black/40 backdrop-blur-md">
         <button
           onClick={handleLogoutClick}
           className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-400 hover:text-white hover:bg-red-600/80 transition-all duration-200 border border-red-500/30 hover:border-red-500 shadow-sm hover:shadow-red-900/30"
