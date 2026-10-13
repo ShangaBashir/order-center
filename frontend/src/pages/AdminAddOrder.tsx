@@ -524,12 +524,11 @@ export const AdminAddOrder: React.FC = () => {
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Estimated Delivery Date *</label>
                   <input
-                    type="text"
+                    type="date"
                     required
                     value={formData.estimatedDelivery}
                     onChange={e => setFormData({ ...formData, estimatedDelivery: e.target.value })}
-                    placeholder=""
-                    className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] shadow-sm"
+                    className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] shadow-sm bg-white font-medium text-slate-800"
                   />
                 </div>
 

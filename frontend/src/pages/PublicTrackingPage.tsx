@@ -8,6 +8,7 @@ import { PublicTrackingData } from '../types';
 import { StatusTimeline } from '../components/StatusTimeline';
 import { useSettings } from '../context/SettingsContext';
 import { useRealtimeTracking } from '../utils/realtime';
+import { formatDisplayDate } from '../utils/formatters';
 
 export const PublicTrackingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -230,7 +231,7 @@ export const PublicTrackingPage: React.FC = () => {
                 </div>
                 <div className="bg-white p-3.5 rounded-md border border-slate-200">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Estimated Delivery</span>
-                  <span className="text-xs font-bold text-[#711612] block mt-0.5">{trackingData.estimatedDelivery || 'Pending schedule'}</span>
+                  <span className="text-xs font-bold text-[#711612] block mt-0.5">{formatDisplayDate(trackingData.estimatedDelivery)}</span>
                 </div>
               </div>
 

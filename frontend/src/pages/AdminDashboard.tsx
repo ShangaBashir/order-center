@@ -9,6 +9,7 @@ import { orderApi } from '../api';
 import { AdminOrder, OrderStatus, ALL_ORDER_STATUSES } from '../types';
 import { OrderDetailsModal } from '../components/OrderDetailsModal';
 import { EditOrderModal } from '../components/EditOrderModal';
+import { formatDisplayDate } from '../utils/formatters';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -248,7 +249,7 @@ export const AdminDashboard: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-700">
-                        {ord.estimatedDelivery || 'Pending'}
+                        {formatDisplayDate(ord.estimatedDelivery)}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <button

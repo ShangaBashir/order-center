@@ -5,6 +5,7 @@ import {
 import { AdminOrder, OrderStatus } from '../types';
 import { StatusTimeline } from './StatusTimeline';
 import { useSettings } from '../context/SettingsContext';
+import { formatDisplayDate } from '../utils/formatters';
 
 import { ConfirmModal } from './ConfirmModal';
 
@@ -127,7 +128,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             </div>
             <div>
               <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Est. Delivery</div>
-              <div className="text-sm font-semibold text-slate-700 mt-0.5">{order.estimatedDelivery || 'Pending'}</div>
+              <div className="text-sm font-semibold text-slate-700 mt-0.5">{formatDisplayDate(order.estimatedDelivery)}</div>
             </div>
           </div>
 
@@ -157,7 +158,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 <div><span className="font-semibold text-slate-900">Origin:</span> {order.originCountry}</div>
                 <div><span className="font-semibold text-slate-900">Destination:</span> {order.destinationCountry}</div>
                 <div><span className="font-semibold text-slate-900">Shipping Method:</span> {order.shippingMethod}</div>
-                <div><span className="font-semibold text-slate-900">Est. Delivery:</span> {order.estimatedDelivery || 'Unscheduled'}</div>
+                <div><span className="font-semibold text-slate-900">Est. Delivery:</span> {formatDisplayDate(order.estimatedDelivery)}</div>
               </div>
             </div>
           </div>

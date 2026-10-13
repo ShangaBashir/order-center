@@ -11,6 +11,21 @@ interface EditOrderModalProps {
   onSave: (orderId: string, updates: Partial<AdminOrder>) => Promise<void>;
 }
 
+const toDateInputValue = (val?: string): string => {
+  if (!val) return '';
+  const trimmed = val.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const timestamp = Date.parse(trimmed);
+  if (!isNaN(timestamp)) {
+    const d = new Date(timestamp);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return '';
+};
+
 export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, onSave }) => {
   if (!order) return null;
 
@@ -36,7 +51,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
     originCountry: order.originCountry || '',
     destinationCountry: order.destinationCountry || '',
     shippingMethod: order.shippingMethod || '',
-    estimatedDelivery: order.estimatedDelivery || '',
+    estimatedDelivery: toDateInputValue(order.estimatedDelivery),
     notes: order.notes || '',
   });
 
@@ -63,7 +78,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
         originCountry: order.originCountry || '',
         destinationCountry: order.destinationCountry || '',
         shippingMethod: order.shippingMethod || '',
-        estimatedDelivery: order.estimatedDelivery || '',
+        estimatedDelivery: toDateInputValue(order.estimatedDelivery),
         notes: order.notes || '',
       });
     }
@@ -512,12 +527,11 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
               <div className="sm:col-span-3">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Estimated Delivery Date *</label>
                 <input
-                  type="text"
+                  type="date"
                   required
                   value={formData.estimatedDelivery}
                   onChange={e => setFormData({ ...formData, estimatedDelivery: e.target.value })}
-                  placeholder="e.g. Oct 15, 2026"
-                  className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] shadow-sm"
+                  className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] shadow-sm bg-white font-medium text-slate-800"
                 />
               </div>
 

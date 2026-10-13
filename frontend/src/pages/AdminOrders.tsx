@@ -11,6 +11,7 @@ import { EditOrderModal } from '../components/EditOrderModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useSettings } from '../context/SettingsContext';
 import { useRealtimeOrders, broadcastLocalOrderEvent } from '../utils/realtime';
+import { formatDisplayDate } from '../utils/formatters';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -265,7 +266,7 @@ export const AdminOrders: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-4 px-4 font-medium text-slate-700 text-sm">
-                        {ord.estimatedDelivery || 'Pending'}
+                        {formatDisplayDate(ord.estimatedDelivery)}
                       </td>
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
