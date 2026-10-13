@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight, Globe, Package, Truck, MapPin, ShieldCheck,
-  Headphones, Search, Star, ChevronRight, Zap, Users, Award
+  Headphones, Search, Star, Zap, Users, Award
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -58,13 +58,14 @@ function useIntersectionObserver(ref: React.RefObject<HTMLElement | null>, optio
 }
 
 // ─── Section Wrapper ───────────────────────────────────────────────────────
-const FadeSection: React.FC<{ children: React.ReactNode; className?: string; id?: string }> = ({ children, className, id }) => {
+const FadeSection: React.FC<{ children: React.ReactNode; className?: string; id?: string; style?: React.CSSProperties }> = ({ children, className, id, style }) => {
   const ref = useRef<HTMLDivElement>(null);
   const visible = useIntersectionObserver(ref as React.RefObject<HTMLElement | null>, { threshold: 0.1 });
   return (
     <div
       ref={ref}
       id={id}
+      style={style}
       className={`transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} ${className}`}
     >
       {children}
@@ -182,7 +183,7 @@ const HomePage: React.FC = () => {
                   { icon: Truck, angle: 90, color: 'bg-white', label: 'Shipping' },
                   { icon: MapPin, angle: 180, color: 'bg-gold', label: 'Delivery' },
                   { icon: ShieldCheck, angle: 270, color: 'bg-white', label: 'Secure' },
-                ].map(({ icon: Icon, angle, color, label }, i) => {
+                ].map(({ icon: Icon, angle, color, label }) => {
                   const rad = (angle * Math.PI) / 180;
                   const r = 140;
                   const x = 160 + r * Math.cos(rad) - 20;

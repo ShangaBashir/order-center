@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
-import { Save, ShieldCheck, CheckCircle2, DollarSign, Calculator } from 'lucide-react';
+import { Save, CheckCircle2, DollarSign, Calculator } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
 import { useSettings } from '../context/SettingsContext';
 
 export const AdminSettings: React.FC = () => {
-  const { usdToIqdRate, idPrefix, defaultCurrency, saveSettings } = useSettings();
+  const { usdToIqdRate, saveSettings, idPrefix, defaultCurrency } = useSettings();
 
   const [rateInput, setRateInput] = useState<number>(usdToIqdRate);
-  const [prefixInput, setPrefixInput] = useState<string>(idPrefix);
-  const [currencyInput, setCurrencyInput] = useState<string>(defaultCurrency);
   const [saved, setSaved] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     const validRate = Number(rateInput) > 0 ? Number(rateInput) : 1500;
-    saveSettings(validRate, prefixInput, currencyInput);
+    saveSettings(validRate, idPrefix, defaultCurrency);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -27,7 +25,7 @@ export const AdminSettings: React.FC = () => {
       <div className="max-w-3xl mx-auto space-y-6">
         <div>
           <h2 className="text-xl font-bold text-slate-800">System & Admin Settings</h2>
-          <p className="text-xs text-slate-500">Configure USD to IQD exchange rates, order ID format, and billing rules.</p>
+          <p className="text-xs text-slate-500">Configure USD to IQD exchange rates and billing rules.</p>
         </div>
 
         {saved && (
@@ -78,40 +76,6 @@ export const AdminSettings: React.FC = () => {
                   ${sampleUsd}.00 USD = <span className="text-[#711612] text-base">{sampleIqd.toLocaleString()} IQD</span>
                 </div>
                 <div className="text-[10px] text-slate-400">Rate: 1 USD = {rateInput} IQD</div>
-              </div>
-            </div>
-          </div>
-
-          {/* ORDER ID GENERATION RULES */}
-          <div className="space-y-4 pt-4 border-t border-slate-200">
-            <h3 className="text-sm font-bold text-[#711612] uppercase tracking-wider flex items-center gap-2 border-b pb-2">
-              <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
-              <span>Order ID Generation Rules</span>
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">ID Format Prefix</label>
-                <input
-                  type="text"
-                  value={prefixInput}
-                  onChange={e => setPrefixInput(e.target.value)}
-                  className="w-full text-sm border-slate-300 rounded-md py-2 px-3 border font-mono shadow-sm"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">Example generated ID: <code className="font-bold text-[#711612]">{prefixInput}00001</code></p>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Default Base Currency</label>
-                <select
-                  value={currencyInput}
-                  onChange={e => setCurrencyInput(e.target.value)}
-                  className="w-full text-sm border-slate-300 rounded-md py-2 px-3 border shadow-sm bg-white font-medium text-slate-800"
-                >
-                  <option value="USD">USD ($)</option>
-                  <option value="IQD">IQD (د.ع)</option>
-                  <option value="EUR">EUR (€)</option>
-                </select>
               </div>
             </div>
           </div>

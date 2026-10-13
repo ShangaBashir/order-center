@@ -11,13 +11,24 @@
   }
 
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto !important;
+    overflow-x: clip;
+    overscroll-behavior-x: none !important;
+    touch-action: pan-y pinch-zoom;
   }
 
   body {
     @apply bg-bg text-charcoal antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     line-height: 1.6;
+    overflow-x: clip;
+    overscroll-behavior-x: none !important;
+    touch-action: pan-y pinch-zoom;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #root {
+    min-height: 100vh;
   }
 
   [dir="rtl"] {

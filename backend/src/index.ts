@@ -24,16 +24,26 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Order Center API', timestamp: new Date() });
 });
 
+// Configure Mongoose for immediate fallback when DB is offline
+mongoose.set('bufferCommands', false);
+
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/global-order';
 
-// Attempt MongoDB Connection asynchronously
-mongoose.connect(MONGO_URI)
-  .then(() => {
+import { migrateAllOrderStatuses } from './migrateStatuses';
+
+// Attempt MongoDB Connection with 1-second timeout
+mongoose.connect(MONGO_URI, {
+  serverSelectionTimeoutMS: 1000,
+  connectTimeoutMS: 1000,
+})
+  .then(async () => {
     console.log('Successfully connected to MongoDB database.');
+    await migrateAllOrderStatuses();
   })
-  .catch(err => {
-    console.warn('MongoDB connection pending or offline. Using in-memory fallback database store.', err.message);
+  .catch(async err => {
+    console.warn('MongoDB connection pending or offline. Instant in-memory fallback active.');
+    await migrateAllOrderStatuses();
   });
 
 app.listen(PORT, () => {

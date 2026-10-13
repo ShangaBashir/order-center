@@ -28,6 +28,7 @@ export interface IOrder {
   estimatedDelivery?: string;
   status: string;
   statusHistory: IStatusHistory[];
+  notes?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -60,20 +61,14 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: [
-      'Order Received',
-      'Order Confirmed',
       'Purchased',
-      'Preparing',
-      'Shipped',
-      'In Transit',
-      'Arrived',
-      'Out for Delivery',
-      'Delivered',
-      'Cancelled'
+      'In Office',
+      'Arrived'
     ],
-    default: 'Order Received'
+    default: 'Purchased'
   },
   statusHistory: [statusHistorySchema],
+  notes: { type: String, default: '' },
 }, { timestamps: true });
 
 export default mongoose.model<IOrder & mongoose.Document>('Order', orderSchema);

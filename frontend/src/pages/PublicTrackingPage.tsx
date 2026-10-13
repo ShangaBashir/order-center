@@ -1,22 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
-  Search, Package, AlertCircle
+  Search, Package, AlertCircle, ArrowLeft
 } from 'lucide-react';
 import { orderApi } from '../api';
 import { PublicTrackingData } from '../types';
 import { StatusTimeline } from '../components/StatusTimeline';
 import { useSettings } from '../context/SettingsContext';
+import { useRealtimeTracking } from '../utils/realtime';
 
 export const PublicTrackingPage: React.FC = () => {
+  const navigate = useNavigate();
   const { formatPriceWithIqd } = useSettings();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialId = searchParams.get('id') || 'HB-2026-00001';
+  const initialId = searchParams.get('id') || searchParams.get('q') || 'HB-2026-00001';
 
   const [orderIdInput, setOrderIdInput] = useState(initialId);
   const [trackingData, setTrackingData] = useState<PublicTrackingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const handleGoBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
 
   const fetchTracking = async (idToSearch: string) => {
     if (!idToSearch.trim()) return;
@@ -26,13 +36,49 @@ export const PublicTrackingPage: React.FC = () => {
     try {
       const data = await orderApi.trackOrder(idToSearch.trim());
       setTrackingData(data);
-      setSearchParams({ id: idToSearch.trim() });
+      if (searchParams.get('id') !== idToSearch.trim()) {
+        setSearchParams({ id: idToSearch.trim() }, { replace: true });
+      }
     } catch (err: any) {
       setErrorMsg(err.message || 'Order not found. Please verify your Order ID.');
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchTrackingSilent = useCallback(async (idToSearch: string) => {
+    if (!idToSearch.trim()) return;
+    try {
+      const data = await orderApi.trackOrder(idToSearch.trim());
+      setTrackingData(data);
+      setErrorMsg('');
+    } catch (err: any) {
+      if (err.message && err.message.toLowerCase().includes('not found')) {
+        setErrorMsg('Order not found.');
+      }
+    }
+  }, []);
+
+  const activeLookupId = trackingData?.orderId || orderIdInput || initialId;
+
+  // Real-time SSE / Broadcast listener
+  const { isLivePulse } = useRealtimeTracking(activeLookupId, (event) => {
+    if (event.type === 'ORDER_DELETED') {
+      setErrorMsg('This order has been cancelled or deleted.');
+      setTrackingData(null);
+    } else {
+      fetchTrackingSilent(activeLookupId);
+    }
+  });
+
+  // Real-time live polling fallback every 3 seconds for guaranteed freshness
+  useEffect(() => {
+    if (!activeLookupId) return;
+    const interval = setInterval(() => {
+      fetchTrackingSilent(activeLookupId);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [activeLookupId, fetchTrackingSilent]);
 
   useEffect(() => {
     if (initialId) {
@@ -48,21 +94,31 @@ export const PublicTrackingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#EBEAE8] text-[#2C2C2C] flex flex-col justify-between">
       <div>
-        {/* Header Header Bar */}
+        {/* Header Bar */}
         <header className="bg-[#711612] text-white py-6 px-4 sm:px-8 border-b border-[#D4AF37]/40 shadow-md">
           <div className="max-w-5xl mx-auto flex items-center justify-center">
-            <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition">
               <img src="/logo.png" alt="Order Center Logo" className="h-10 w-auto object-contain" />
-              <div>
+              <div className="text-left">
                 <div className="font-display font-bold text-white text-lg">Order Center</div>
                 <div className="text-[10px] text-[#D4AF37] font-semibold tracking-wider uppercase">Global Shopping & Shipping</div>
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
         {/* Main Content Area */}
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+          {/* Back to Previous Page Link */}
+          <div>
+            <button
+              onClick={handleGoBack}
+              className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#711612] transition bg-white hover:bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm"
+            >
+              <ArrowLeft className="w-4 h-4 text-[#711612]" />
+              <span>Back to Previous Page</span>
+            </button>
+          </div>
           
           {/* Tracking Search Card */}
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 sm:p-8 space-y-6">
@@ -140,17 +196,30 @@ export const PublicTrackingPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-white/10 backdrop-blur p-4 rounded-lg border border-white/20 text-right sm:min-w-[180px]">
+                <div className={`p-4 rounded-lg border text-right sm:min-w-[200px] transition-all duration-300 ${
+                  isLivePulse 
+                    ? 'bg-emerald-500/30 border-emerald-400 ring-2 ring-emerald-400' 
+                    : 'bg-white/10 backdrop-blur border-white/20'
+                }`}>
+                  <div className="flex items-center justify-end gap-1.5 mb-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider">
+                      Live Real-Time
+                    </span>
+                  </div>
                   <span className="text-[10px] text-white/70 uppercase tracking-wider block">Current Status</span>
-                  <span className="text-base font-extrabold text-[#D4AF37] block mt-0.5">{trackingData.status}</span>
-                  <span className="text-[10px] text-white/50 block mt-1">
+                  <span className="text-base sm:text-lg font-extrabold text-[#D4AF37] block mt-0.5">{trackingData.status}</span>
+                  <span className="text-[10px] text-white/60 block mt-1">
                     Updated: {new Date(trackingData.updatedAt || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
                 </div>
               </div>
 
               {/* Shipping Overview Cards */}
-              <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50/70">
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/70">
                 <div className="bg-white p-3.5 rounded-md border border-slate-200">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Origin</span>
                   <span className="text-xs font-bold text-slate-800 block mt-0.5">{trackingData.originCountry}</span>
@@ -162,10 +231,6 @@ export const PublicTrackingPage: React.FC = () => {
                 <div className="bg-white p-3.5 rounded-md border border-slate-200">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Estimated Delivery</span>
                   <span className="text-xs font-bold text-[#711612] block mt-0.5">{trackingData.estimatedDelivery || 'Pending schedule'}</span>
-                </div>
-                <div className="bg-white p-3.5 rounded-md border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tracking Number</span>
-                  <span className="text-xs font-mono font-bold text-slate-800 block mt-0.5">{trackingData.trackingNumber || 'Processing'}</span>
                 </div>
               </div>
 

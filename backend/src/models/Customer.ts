@@ -5,6 +5,7 @@ export interface ICustomer {
   customerId: string;
   name: string;
   phone: string;
+  secondaryPhone?: string;
   email?: string;
   address: string;
   notes?: string;
@@ -16,6 +17,7 @@ const customerSchema = new mongoose.Schema({
   customerId: { type: String, required: true, unique: true, index: true },
   name: { type: String, required: true },
   phone: { type: String, required: true },
+  secondaryPhone: { type: String, default: '' },
   email: { type: String, default: '' },
   address: { type: String, required: true },
   notes: { type: String, default: '' },

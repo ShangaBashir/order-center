@@ -1,33 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ShoppingBag, Clock, Truck, CheckCircle2, XCircle, Search, PlusCircle,
-  Eye, ArrowUpRight, TrendingUp
+  ShoppingBag, Clock, CheckCircle2, Search, PlusCircle,
+  Eye, TrendingUp, ChevronLeft, ChevronRight, Building2
 } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
 import { orderApi } from '../api';
-import { AdminOrder, OrderStatus } from '../types';
+import { AdminOrder, OrderStatus, ALL_ORDER_STATUSES } from '../types';
 import { OrderDetailsModal } from '../components/OrderDetailsModal';
 import { EditOrderModal } from '../components/EditOrderModal';
 
+const ITEMS_PER_PAGE = 10;
+
 export const AdminDashboard: React.FC = () => {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [editOrder, setEditOrder] = useState<AdminOrder | null>(null);
 
   const loadOrders = async () => {
-    setLoading(true);
     try {
       const data = await orderApi.getOrders();
       setOrders(data);
     } catch (err) {
       console.error('Failed to load orders', err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -35,12 +34,15 @@ export const AdminDashboard: React.FC = () => {
     loadOrders();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
   // Stats calculation
   const totalOrders = orders.length;
-  const pendingOrders = orders.filter(o => o.status === 'Order Received' || o.status === 'Order Confirmed' || o.status === 'Purchased' || o.status === 'Preparing').length;
-  const inTransitOrders = orders.filter(o => o.status === 'Shipped' || o.status === 'In Transit' || o.status === 'Arrived' || o.status === 'Out for Delivery').length;
-  const deliveredOrders = orders.filter(o => o.status === 'Delivered').length;
-  const cancelledOrders = orders.filter(o => o.status === 'Cancelled').length;
+  const purchasedOrders = orders.filter(o => o.status === 'Purchased').length;
+  const inOfficeOrders = orders.filter(o => o.status === 'In Office').length;
+  const arrivedOrders = orders.filter(o => o.status === 'Arrived').length;
 
   // Filtered recent orders
   const filteredOrders = orders.filter(o => {
@@ -53,6 +55,13 @@ export const AdminDashboard: React.FC = () => {
     const matchesStatus = statusFilter === 'ALL' || o.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination calculation
+  const totalFilteredOrders = filteredOrders.length;
+  const totalPages = Math.ceil(totalFilteredOrders / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalFilteredOrders);
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
 
   const handleStatusUpdate = async (orderId: string, status: OrderStatus, note?: string) => {
     await orderApi.updateOrderStatus(orderId, status, note);
@@ -75,16 +84,13 @@ export const AdminDashboard: React.FC = () => {
 
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
-      case 'Delivered':
+      case 'Arrived':
         return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-      case 'Cancelled':
-        return 'bg-red-100 text-red-800 border-red-300';
-      case 'In Transit':
-      case 'Shipped':
-      case 'Out for Delivery':
-        return 'bg-amber-100 text-amber-800 border-amber-300';
-      default:
+      case 'In Office':
         return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'Purchased':
+      default:
+        return 'bg-amber-100 text-amber-800 border-amber-300';
     }
   };
 
@@ -95,7 +101,7 @@ export const AdminDashboard: React.FC = () => {
         {/* Top Quick Actions Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-800">Welcome Back, Admin 👋</h2>
+            <h2 className="text-xl font-bold text-slate-800">Welcome Back, Admin</h2>
             <p className="text-xs text-slate-500 mt-0.5">Real-time overview of customer orders and logistics operations.</p>
           </div>
 
@@ -110,8 +116,8 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* 5 Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* 4 Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
           {/* Total Orders */}
           <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition">
@@ -128,52 +134,40 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Pending Orders */}
-          <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition">
+          {/* Purchased */}
+          <div className="bg-white p-5 rounded-lg border border-amber-200 shadow-sm hover:shadow-md transition">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending</span>
-              <div className="p-2 rounded-md bg-blue-50 text-blue-600">
+              <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Purchased</span>
+              <div className="p-2 rounded-md bg-amber-50 text-amber-600">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl font-bold text-blue-600 mt-3">{pendingOrders}</div>
-            <div className="text-[11px] text-slate-500 mt-1">Processing / Sourcing</div>
+            <div className="text-2xl font-bold text-amber-600 mt-3">{purchasedOrders}</div>
+            <div className="text-[11px] text-slate-500 mt-1">Item bought from supplier</div>
           </div>
 
-          {/* Orders In Transit */}
-          <div className="bg-white p-5 rounded-lg border border-amber-200 shadow-sm hover:shadow-md transition">
+          {/* In Office */}
+          <div className="bg-white p-5 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">In Transit</span>
-              <div className="p-2 rounded-md bg-amber-50 text-amber-600">
-                <Truck className="w-4 h-4" />
+              <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">In Office</span>
+              <div className="p-2 rounded-md bg-blue-50 text-blue-600">
+                <Building2 className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl font-bold text-amber-600 mt-3">{inTransitOrders}</div>
-            <div className="text-[11px] text-slate-500 mt-1">Shipped & En Route</div>
+            <div className="text-2xl font-bold text-blue-600 mt-3">{inOfficeOrders}</div>
+            <div className="text-[11px] text-slate-500 mt-1">Processing at office hub</div>
           </div>
 
-          {/* Delivered Orders */}
+          {/* Arrived */}
           <div className="bg-white p-5 rounded-lg border border-emerald-200 shadow-sm hover:shadow-md transition">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Delivered</span>
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Arrived</span>
               <div className="p-2 rounded-md bg-emerald-50 text-emerald-600">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl font-bold text-emerald-600 mt-3">{deliveredOrders}</div>
-            <div className="text-[11px] text-slate-500 mt-1">Successfully fulfilled</div>
-          </div>
-
-          {/* Cancelled Orders */}
-          <div className="bg-white p-5 rounded-lg border border-red-200 shadow-sm hover:shadow-md transition">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-red-700 uppercase tracking-wider">Cancelled</span>
-              <div className="p-2 rounded-md bg-red-50 text-red-600">
-                <XCircle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-red-600 mt-3">{cancelledOrders}</div>
-            <div className="text-[11px] text-slate-500 mt-1">Voided or returned</div>
+            <div className="text-2xl font-bold text-emerald-600 mt-3">{arrivedOrders}</div>
+            <div className="text-[11px] text-slate-500 mt-1">Arrived & ready</div>
           </div>
 
         </div>
@@ -196,7 +190,7 @@ export const AdminDashboard: React.FC = () => {
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search ID, customer, product..."
+                  placeholder="Search"
                   className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-md focus:border-[#711612] bg-white"
                 />
               </div>
@@ -207,12 +201,10 @@ export const AdminDashboard: React.FC = () => {
                 onChange={e => setStatusFilter(e.target.value)}
                 className="w-full sm:w-auto text-xs border border-slate-300 rounded-md py-1.5 px-3 bg-white font-medium text-slate-700"
               >
-                <option value="ALL">All Statuses</option>
-                <option value="Order Received">Order Received</option>
-                <option value="In Transit">In Transit</option>
-                <option value="Out for Delivery">Out for Delivery</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="ALL">All Statuses ({ALL_ORDER_STATUSES.length})</option>
+                {ALL_ORDER_STATUSES.map(st => (
+                  <option key={st} value={st}>{st}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -226,21 +218,19 @@ export const AdminDashboard: React.FC = () => {
                   <th className="py-3.5 px-4">Customer</th>
                   <th className="py-3.5 px-4">Product</th>
                   <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Tracking #</th>
-                  <th className="py-3.5 px-4">Created Date</th>
                   <th className="py-3.5 px-4">Est. Delivery</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
-                {filteredOrders.length === 0 ? (
+                {paginatedOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
                       No orders match your search criteria.
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.slice(0, 10).map(ord => (
+                  paginatedOrders.map(ord => (
                     <tr key={ord.orderId} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono font-bold text-[#711612]">
                         {ord.orderId}
@@ -256,12 +246,6 @@ export const AdminDashboard: React.FC = () => {
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${getStatusBadge(ord.status)}`}>
                           {ord.status}
                         </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-[11px]">
-                        {ord.trackingNumber || <span className="text-slate-300">Unassigned</span>}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-500">
-                        {new Date(ord.createdAt || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-700">
                         {ord.estimatedDelivery || 'Pending'}
@@ -282,14 +266,50 @@ export const AdminDashboard: React.FC = () => {
             </table>
           </div>
 
-          <div className="p-4 bg-slate-50 border-t border-slate-200 text-right">
-            <Link
-              to="/admin/orders"
-              className="text-xs font-bold text-[#711612] hover:underline inline-flex items-center gap-1"
-            >
-              <span>View All Orders ({orders.length})</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
+          {/* Pagination Footer */}
+          <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+            <div>
+              Showing <span className="font-bold text-slate-900">{totalFilteredOrders > 0 ? startIndex + 1 : 0}</span> to{' '}
+              <span className="font-bold text-slate-900">{endIndex}</span> of{' '}
+              <span className="font-bold text-[#711612] font-mono">{totalFilteredOrders}</span> Orders
+              <span className="ml-2 text-slate-400">(Page {currentPage} of {totalPages})</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 rounded border border-slate-300 hover:bg-white text-slate-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 text-[11px]"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Prev</span>
+              </button>
+
+              <div className="flex items-center gap-1 font-semibold">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-6 h-6 rounded text-[11px] font-bold transition ${
+                      currentPage === page
+                        ? 'bg-[#711612] text-white shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-200 border border-slate-300'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="px-2.5 py-1 rounded border border-slate-300 hover:bg-white text-slate-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 text-[11px]"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
         </div>

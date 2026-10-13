@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Search, AlertCircle } from 'lucide-react';
+import { Search, AlertCircle, X } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
 import { orderApi } from '../api';
 import { AdminOrder } from '../types';
 import { StatusTimeline } from '../components/StatusTimeline';
 
 export const AdminTracking: React.FC = () => {
-  const [query, setQuery] = useState('HB-2026-00001');
+  const [query, setQuery] = useState('');
   const [order, setOrder] = useState<AdminOrder | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,10 +21,16 @@ export const AdminTracking: React.FC = () => {
       const data = await orderApi.getOrder(query.trim());
       setOrder(data);
     } catch (err: any) {
-      setError('Order not found. Please verify the Order ID or Tracking Number.');
+      setError('Order not found. Please verify the Order ID.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    setOrder(null);
+    setError('');
   };
 
   return (
@@ -32,7 +38,7 @@ export const AdminTracking: React.FC = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Admin Order Tracking Lookup</h2>
-          <p className="text-xs text-slate-500">Search any order by unique Order ID (e.g. HB-2026-00001) or carrier tracking number.</p>
+          <p className="text-xs text-slate-500">Search any order by unique Order ID.</p>
         </div>
 
         {/* Search Bar */}
@@ -42,10 +48,26 @@ export const AdminTracking: React.FC = () => {
             <input
               type="text"
               value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Enter Order ID (HB-2026-XXXXX) or Tracking Number..."
-              className="w-full pl-11 pr-4 py-2.5 text-sm border-slate-300 rounded-md border font-mono font-medium focus:border-[#711612] shadow-sm"
+              onChange={e => {
+                setQuery(e.target.value);
+                if (!e.target.value.trim()) {
+                  setOrder(null);
+                  setError('');
+                }
+              }}
+              placeholder="Search"
+              className="w-full pl-11 pr-10 py-2.5 text-sm border-slate-300 rounded-md border font-mono font-medium focus:border-[#711612] shadow-sm"
             />
+            {query && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition"
+                title="Clear Search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <button
             type="submit"
@@ -81,7 +103,6 @@ export const AdminTracking: React.FC = () => {
               <div><span className="font-bold text-slate-900 block">Customer:</span> {order.customerName} ({order.phone})</div>
               <div><span className="font-bold text-slate-900 block">Product:</span> {order.productName}</div>
               <div><span className="font-bold text-slate-900 block">Origin → Destination:</span> {order.originCountry} → {order.destinationCountry}</div>
-              <div><span className="font-bold text-slate-900 block">Carrier Tracking #:</span> <span className="font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded">{order.trackingNumber || 'Unassigned'}</span></div>
               <div><span className="font-bold text-slate-900 block">Est. Delivery:</span> {order.estimatedDelivery || 'Unscheduled'}</div>
               <div><span className="font-bold text-slate-900 block">Total Amount:</span> ${order.totalPrice.toFixed(2)} {order.currency}</div>
             </div>

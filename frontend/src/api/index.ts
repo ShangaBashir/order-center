@@ -5,6 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 3000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,7 +31,7 @@ const DEMO_ORDERS: AdminOrder[] = [
     address: 'Salim Street, Sulaimanyiah, Kurdistan Region, Iraq',
     productName: 'SHEIN Elegant Floral Satin Dress & Heels Set',
     productUrl: 'https://shein.com/product/123456',
-    productImage: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=80',
+    productImage: '',
     quantity: 1,
     productPrice: 68.00,
     shippingFee: 12.00,
@@ -41,14 +42,10 @@ const DEMO_ORDERS: AdminOrder[] = [
     shippingMethod: 'Express Air',
     trackingNumber: 'OC-984210-CN',
     estimatedDelivery: 'Oct 02, 2026',
-    status: 'In Transit',
+    status: 'In Office',
     statusHistory: [
-      { status: 'Order Received', date: '2026-09-20T10:00:00Z', note: 'Order created in system' },
-      { status: 'Order Confirmed', date: '2026-09-20T11:30:00Z', note: 'Payment confirmed by admin' },
       { status: 'Purchased', date: '2026-09-21T08:15:00Z', note: 'Purchased from SHEIN China warehouse' },
-      { status: 'Preparing', date: '2026-09-22T14:20:00Z', note: 'Packed & inspection passed' },
-      { status: 'Shipped', date: '2026-09-23T09:00:00Z', note: 'Departed Guangzhou airport hub' },
-      { status: 'In Transit', date: '2026-09-24T12:30:00Z', note: 'Arrived at Istanbul transit hub' },
+      { status: 'In Office', date: '2026-09-24T12:30:00Z', note: 'Arrived at local office in Sulaimanyiah' },
     ],
     createdAt: '2026-09-20T10:00:00Z',
     updatedAt: '2026-09-24T12:30:00Z',
@@ -62,7 +59,7 @@ const DEMO_ORDERS: AdminOrder[] = [
     address: 'Piramagrun, Sulaimanyiah, Iraq',
     productName: 'Amazon Echo Dot 5th Gen Smart Speaker',
     productUrl: 'https://amazon.com/dp/B09B8V1LZ3',
-    productImage: 'https://images.unsplash.com/photo-1543512214-318c7553f230?w=400&q=80',
+    productImage: '',
     quantity: 2,
     productPrice: 50.00,
     shippingFee: 15.00,
@@ -73,14 +70,11 @@ const DEMO_ORDERS: AdminOrder[] = [
     shippingMethod: 'Express Cargo',
     trackingNumber: 'OC-773194-US',
     estimatedDelivery: 'Sep 28, 2026',
-    status: 'Out for Delivery',
+    status: 'Arrived',
     statusHistory: [
-      { status: 'Order Received', date: '2026-09-18T09:00:00Z', note: 'Order registered' },
-      { status: 'Order Confirmed', date: '2026-09-18T10:00:00Z', note: 'Payment verified' },
       { status: 'Purchased', date: '2026-09-19T14:00:00Z', note: 'Ordered from Amazon US' },
-      { status: 'Shipped', date: '2026-09-21T11:00:00Z', note: 'Shipped via DHL' },
-      { status: 'Arrived', date: '2026-09-23T16:00:00Z', note: 'Arrived at Sulaimanyiah local office' },
-      { status: 'Out for Delivery', date: '2026-09-24T08:30:00Z', note: 'Driver assigned for final delivery' },
+      { status: 'In Office', date: '2026-09-22T10:00:00Z', note: 'Received at sorting hub' },
+      { status: 'Arrived', date: '2026-09-24T08:30:00Z', note: 'Package arrived at destination' },
     ],
     createdAt: '2026-09-18T09:00:00Z',
     updatedAt: '2026-09-24T08:30:00Z',
@@ -94,7 +88,7 @@ const DEMO_ORDERS: AdminOrder[] = [
     address: 'Bakrajo, Sulaimanyiah, Iraq',
     productName: 'Nike Air Max 270 Sneakers - Size 43',
     productUrl: 'https://nike.com/t/air-max-270',
-    productImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80',
+    productImage: '',
     quantity: 1,
     productPrice: 160.00,
     shippingFee: 20.00,
@@ -105,14 +99,11 @@ const DEMO_ORDERS: AdminOrder[] = [
     shippingMethod: 'Standard Air',
     trackingNumber: 'OC-551029-TR',
     estimatedDelivery: 'Sep 24, 2026',
-    status: 'Delivered',
+    status: 'Arrived',
     statusHistory: [
-      { status: 'Order Received', date: '2026-09-15T12:00:00Z', note: 'Created' },
-      { status: 'Order Confirmed', date: '2026-09-15T13:00:00Z', note: 'Confirmed' },
-      { status: 'Purchased', date: '2026-09-16T10:00:00Z', note: 'Purchased' },
-      { status: 'Shipped', date: '2026-09-18T15:00:00Z', note: 'Shipped from Istanbul' },
-      { status: 'Out for Delivery', date: '2026-09-23T09:00:00Z', note: 'Couriers en route' },
-      { status: 'Delivered', date: '2026-09-24T11:00:00Z', note: 'Delivered to customer & signed' },
+      { status: 'Purchased', date: '2026-09-16T10:00:00Z', note: 'Purchased from supplier' },
+      { status: 'In Office', date: '2026-09-20T12:00:00Z', note: 'Arrived in regional office' },
+      { status: 'Arrived', date: '2026-09-24T11:00:00Z', note: 'Package arrived at delivery counter' },
     ],
     createdAt: '2026-09-15T12:00:00Z',
     updatedAt: '2026-09-24T11:00:00Z',
@@ -126,7 +117,7 @@ const DEMO_ORDERS: AdminOrder[] = [
     address: 'Raniya, Kurdistan Region, Iraq',
     productName: 'Zara Oversized Winter Jacket (Dark Brown)',
     productUrl: 'https://zara.com/product/winter-jacket',
-    productImage: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&q=80',
+    productImage: '',
     quantity: 1,
     productPrice: 110.00,
     shippingFee: 15.00,
@@ -137,9 +128,9 @@ const DEMO_ORDERS: AdminOrder[] = [
     shippingMethod: 'Express Air',
     trackingNumber: '',
     estimatedDelivery: 'Oct 05, 2026',
-    status: 'Order Received',
+    status: 'Purchased',
     statusHistory: [
-      { status: 'Order Received', date: '2026-09-24T14:00:00Z', note: 'Order registered by admin' },
+      { status: 'Purchased', date: '2026-09-24T14:00:00Z', note: 'Order purchased by admin' },
     ],
     createdAt: '2026-09-24T14:00:00Z',
     updatedAt: '2026-09-24T14:00:00Z',
@@ -153,7 +144,7 @@ const DEMO_ORDERS: AdminOrder[] = [
     address: 'Tavga Street, Sulaimanyiah, Iraq',
     productName: 'Anker PowerCore 20000mAh Power Bank',
     productUrl: 'https://anker.com/powercore',
-    productImage: 'https://images.unsplash.com/photo-1609592424009-28c0373e2a05?w=400&q=80',
+    productImage: '',
     quantity: 2,
     productPrice: 40.00,
     shippingFee: 10.00,
@@ -164,11 +155,10 @@ const DEMO_ORDERS: AdminOrder[] = [
     shippingMethod: 'Standard Cargo',
     trackingNumber: 'OC-112233-CN',
     estimatedDelivery: 'Oct 01, 2026',
-    status: 'Purchased',
+    status: 'In Office',
     statusHistory: [
-      { status: 'Order Received', date: '2026-09-22T08:00:00Z', note: 'Order placed' },
-      { status: 'Order Confirmed', date: '2026-09-22T09:30:00Z', note: 'Verified' },
-      { status: 'Purchased', date: '2026-09-23T11:00:00Z', note: 'Supplier invoice issued' },
+      { status: 'Purchased', date: '2026-09-22T08:00:00Z', note: 'Purchased' },
+      { status: 'In Office', date: '2026-09-23T11:00:00Z', note: 'Received at office' },
     ],
     createdAt: '2026-09-22T08:00:00Z',
     updatedAt: '2026-09-23T11:00:00Z',
@@ -191,6 +181,33 @@ export const orderApi = {
         return { token: dummyToken, user: dummyUser };
       }
       throw new Error(err.response?.data?.message || 'Invalid login credentials');
+    }
+  },
+
+  // Register User or Customer
+  async register(userData: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    isCustomer?: boolean;
+    customerId?: string;
+  }): Promise<{ token: string; user: AdminUser }> {
+    try {
+      const res = await api.post('/auth/register', userData);
+      return res.data;
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || 'Registration failed');
+    }
+  },
+
+  // Get Current User Profile
+  async getMe(): Promise<{ user: AdminUser }> {
+    try {
+      const res = await api.get('/auth/me');
+      return res.data;
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || 'Failed to fetch user profile');
     }
   },
 
@@ -258,7 +275,7 @@ export const orderApi = {
         address: orderData.address || '',
         productName: orderData.productName || '',
         productUrl: orderData.productUrl || '',
-        productImage: orderData.productImage || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
+        productImage: orderData.productImage || '',
         quantity: qty,
         productPrice: price,
         shippingFee: fee,
@@ -269,10 +286,10 @@ export const orderApi = {
         shippingMethod: orderData.shippingMethod || 'Express Air',
         trackingNumber: orderData.trackingNumber || '',
         estimatedDelivery: orderData.estimatedDelivery || '',
-        status: orderData.status || 'Order Received',
+        status: orderData.status || 'Purchased',
         statusHistory: [
           {
-            status: orderData.status || 'Order Received',
+            status: orderData.status || 'Purchased',
             date: now,
             note: 'Order created manually in admin dashboard'
           }
@@ -347,6 +364,28 @@ export const orderApi = {
     }
   },
 
+  // Get Next Auto Order ID
+  async getNextOrderId(): Promise<string> {
+    try {
+      const res = await api.get('/orders/next-id');
+      return res.data.orderId;
+    } catch (err) {
+      const year = new Date().getFullYear();
+      const prefix = `HB-${year}-`;
+      let maxNum = 0;
+      for (const o of localOrdersStore) {
+        if (o.orderId.startsWith(prefix)) {
+          const parts = o.orderId.split('-');
+          if (parts.length === 3) {
+            const num = parseInt(parts[2], 10) || 0;
+            if (num > maxNum) maxNum = num;
+          }
+        }
+      }
+      return `${prefix}${(maxNum + 1).toString().padStart(5, '0')}`;
+    }
+  },
+
   // Public Customer Tracking
   async trackOrder(orderId: string): Promise<PublicTrackingData> {
     try {
@@ -384,7 +423,7 @@ export const orderApi = {
 let localCustomersStore: Customer[] = [
   {
     _id: 'cust_1',
-    customerId: 'CUST-1001',
+    customerId: 'SNGB-7492',
     name: 'Shanga Bashir',
     phone: '07701566233',
     email: 'shanga@example.com',
@@ -396,7 +435,7 @@ let localCustomersStore: Customer[] = [
   },
   {
     _id: 'cust_2',
-    customerId: 'CUST-1002',
+    customerId: 'MDKR-4183',
     name: 'Amed Karzan',
     phone: '07511946651',
     email: 'amed.k@example.com',
@@ -408,7 +447,7 @@ let localCustomersStore: Customer[] = [
   },
   {
     _id: 'cust_3',
-    customerId: 'CUST-1003',
+    customerId: 'SRNM-9315',
     name: 'Soran Mustafa',
     phone: '07709876543',
     email: 'soran@example.com',
@@ -420,7 +459,7 @@ let localCustomersStore: Customer[] = [
   },
   {
     _id: 'cust_4',
-    customerId: 'CUST-1004',
+    customerId: 'DYRH-6824',
     name: 'Diyar Hawrami',
     phone: '07504445566',
     email: 'diyar@example.com',
@@ -432,7 +471,7 @@ let localCustomersStore: Customer[] = [
   },
   {
     _id: 'cust_5',
-    customerId: 'CUST-1005',
+    customerId: 'LNLA-5291',
     name: 'Lina Ali',
     phone: '07712223344',
     email: 'lina@example.com',
@@ -446,33 +485,62 @@ let localCustomersStore: Customer[] = [
 
 export const customerApi = {
   async getCustomers(): Promise<Customer[]> {
+    let list: Customer[] = [];
     try {
       const res = await api.get('/customers');
       if (Array.isArray(res.data) && res.data.length > 0) {
-        localCustomersStore = res.data;
-        return res.data;
+        list = res.data;
+      } else {
+        list = localCustomersStore;
       }
-      return localCustomersStore;
     } catch (err) {
-      return localCustomersStore;
+      list = localCustomersStore;
     }
+
+    // Deduplicate by customerId / _id
+    const seen = new Set<string>();
+    const deduplicated = list.filter(c => {
+      const key = c.customerId || c._id || '';
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    localCustomersStore = deduplicated;
+    return deduplicated;
   },
 
   async createCustomer(custData: Partial<Customer>): Promise<{ message: string; customer: Customer; customerId: string }> {
     try {
       const res = await api.post('/customers', custData);
       const created = res.data.customer;
-      localCustomersStore.unshift(created);
+      
+      const existingIdx = localCustomersStore.findIndex(c => c.customerId === created.customerId || c._id === created._id);
+      if (existingIdx !== -1) {
+        localCustomersStore[existingIdx] = created;
+      } else {
+        localCustomersStore.unshift(created);
+      }
       return res.data;
     } catch (err) {
-      let maxNum = 1000;
-      for (const c of localCustomersStore) {
-        if (c.customerId && c.customerId.startsWith('CUST-')) {
-          const num = parseInt(c.customerId.replace('CUST-', ''), 10);
-          if (!isNaN(num) && num > maxNum) maxNum = num;
-        }
+      let prefix = '';
+      if (custData.name && custData.name.trim()) {
+        const clean = custData.name.trim().toUpperCase().replace(/[^A-Z]/g, '');
+        const consonants = clean.replace(/[AEIOU]/g, '');
+        const source = consonants.length >= 4 ? consonants : clean;
+        prefix = source.slice(0, 4);
       }
-      const newCustId = `CUST-${maxNum + 1}`;
+      const alpha = 'BCDFGHJKLMNPQRSTVWXYZ';
+      while (prefix.length < 4) {
+        prefix += alpha.charAt(Math.floor(Math.random() * alpha.length));
+      }
+      const existingIds = localCustomersStore.map(c => c.customerId);
+      let newCustId = '';
+      do {
+        const num = Math.floor(1000 + Math.random() * 9000);
+        newCustId = `${prefix}-${num}`;
+      } while (existingIds.includes(newCustId));
+
       const now = new Date().toISOString();
       const newCust: Customer = {
         _id: `cust_${Date.now()}`,
@@ -493,6 +561,32 @@ export const customerApi = {
         customer: newCust,
         customerId: newCustId
       };
+    }
+  },
+
+  async updateCustomer(id: string, custData: Partial<Customer>): Promise<{ message: string; customer: Customer }> {
+    try {
+      const res = await api.put(`/customers/${id}`, custData);
+      const updated = res.data.customer;
+      const idx = localCustomersStore.findIndex(c => c.customerId === id || c._id === id);
+      if (idx !== -1) {
+        localCustomersStore[idx] = { ...localCustomersStore[idx], ...updated };
+      }
+      return res.data;
+    } catch (err) {
+      const idx = localCustomersStore.findIndex(c => c.customerId === id || c._id === id);
+      if (idx !== -1) {
+        localCustomersStore[idx] = {
+          ...localCustomersStore[idx],
+          ...custData,
+          updatedAt: new Date().toISOString()
+        };
+        return {
+          message: 'Customer updated successfully.',
+          customer: localCustomersStore[idx]
+        };
+      }
+      throw new Error('Customer not found');
     }
   },
 

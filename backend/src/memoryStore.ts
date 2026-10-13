@@ -20,6 +20,7 @@ export interface OrderData {
   estimatedDelivery: string;
   status: string;
   statusHistory: Array<{ status: string; date: string | Date; note?: string }>;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +30,7 @@ export interface CustomerData {
   customerId: string;
   name: string;
   phone: string;
+  secondaryPhone?: string;
   email: string;
   address: string;
   notes?: string;
@@ -36,11 +38,24 @@ export interface CustomerData {
   updatedAt: string;
 }
 
+export interface UserData {
+  _id: string;
+  name: string;
+  email: string;
+  password?: string;
+  phone?: string;
+  role: 'user' | 'admin' | 'customer';
+  isCustomer?: boolean;
+  customerId?: string;
+  createdAt: string;
+}
+
 class MemoryStore {
+  private users: UserData[] = [];
   private customers: CustomerData[] = [
     {
       _id: 'cust_1',
-      customerId: 'CUST-1001',
+      customerId: 'SNGB-7492',
       name: 'Shanga Bashir',
       phone: '07701566233',
       email: 'shanga@example.com',
@@ -51,7 +66,7 @@ class MemoryStore {
     },
     {
       _id: 'cust_2',
-      customerId: 'CUST-1002',
+      customerId: 'MDKR-4183',
       name: 'Amed Karzan',
       phone: '07511946651',
       email: 'amed.k@example.com',
@@ -62,7 +77,7 @@ class MemoryStore {
     },
     {
       _id: 'cust_3',
-      customerId: 'CUST-1003',
+      customerId: 'SRNM-9315',
       name: 'Soran Mustafa',
       phone: '07709876543',
       email: 'soran@example.com',
@@ -73,7 +88,7 @@ class MemoryStore {
     },
     {
       _id: 'cust_4',
-      customerId: 'CUST-1004',
+      customerId: 'DYRH-6824',
       name: 'Diyar Hawrami',
       phone: '07504445566',
       email: 'diyar@example.com',
@@ -84,7 +99,7 @@ class MemoryStore {
     },
     {
       _id: 'cust_5',
-      customerId: 'CUST-1005',
+      customerId: 'LNLA-5291',
       name: 'Lina Ali',
       phone: '07712223344',
       email: 'lina@example.com',
@@ -105,7 +120,7 @@ class MemoryStore {
       address: 'Salim Street, Sulaimanyiah, Kurdistan Region, Iraq',
       productName: "SHEIN Elegant Floral Satin Dress & Heels Set",
       productUrl: 'https://shein.com/product/123456',
-      productImage: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=80',
+      productImage: '',
       quantity: 1,
       productPrice: 68.00,
       shippingFee: 12.00,
@@ -116,14 +131,10 @@ class MemoryStore {
       shippingMethod: 'Express Air',
       trackingNumber: 'OC-984210-CN',
       estimatedDelivery: 'Oct 02, 2026',
-      status: 'In Transit',
+      status: 'In Office',
       statusHistory: [
-        { status: 'Order Received', date: '2026-09-20T10:00:00Z', note: 'Order created in system' },
-        { status: 'Order Confirmed', date: '2026-09-20T11:30:00Z', note: 'Payment confirmed by admin' },
         { status: 'Purchased', date: '2026-09-21T08:15:00Z', note: 'Purchased from SHEIN China warehouse' },
-        { status: 'Preparing', date: '2026-09-22T14:20:00Z', note: 'Packed & inspection passed' },
-        { status: 'Shipped', date: '2026-09-23T09:00:00Z', note: 'Departed Guangzhou airport hub' },
-        { status: 'In Transit', date: '2026-09-24T12:30:00Z', note: 'Arrived at Istanbul transit hub' },
+        { status: 'In Office', date: '2026-09-24T12:30:00Z', note: 'Arrived at local office in Sulaimanyiah' },
       ],
       createdAt: '2026-09-20T10:00:00Z',
       updatedAt: '2026-09-24T12:30:00Z',
@@ -137,7 +148,7 @@ class MemoryStore {
       address: 'Piramagrun, Sulaimanyiah, Iraq',
       productName: 'Amazon Echo Dot 5th Gen Smart Speaker',
       productUrl: 'https://amazon.com/dp/B09B8V1LZ3',
-      productImage: 'https://images.unsplash.com/photo-1543512214-318c7553f230?w=400&q=80',
+      productImage: '',
       quantity: 2,
       productPrice: 50.00,
       shippingFee: 15.00,
@@ -148,14 +159,11 @@ class MemoryStore {
       shippingMethod: 'Express Cargo',
       trackingNumber: 'OC-773194-US',
       estimatedDelivery: 'Sep 28, 2026',
-      status: 'Out for Delivery',
+      status: 'Arrived',
       statusHistory: [
-        { status: 'Order Received', date: '2026-09-18T09:00:00Z', note: 'Order registered' },
-        { status: 'Order Confirmed', date: '2026-09-18T10:00:00Z', note: 'Payment verified' },
         { status: 'Purchased', date: '2026-09-19T14:00:00Z', note: 'Ordered from Amazon US' },
-        { status: 'Shipped', date: '2026-09-21T11:00:00Z', note: 'Shipped via DHL' },
-        { status: 'Arrived', date: '2026-09-23T16:00:00Z', note: 'Arrived at Sulaimanyiah local office' },
-        { status: 'Out for Delivery', date: '2026-09-24T08:30:00Z', note: 'Driver assigned for final delivery' },
+        { status: 'In Office', date: '2026-09-22T10:00:00Z', note: 'Received at sorting hub' },
+        { status: 'Arrived', date: '2026-09-24T08:30:00Z', note: 'Package arrived at Sulaimanyiah local office' },
       ],
       createdAt: '2026-09-18T09:00:00Z',
       updatedAt: '2026-09-24T08:30:00Z',
@@ -169,7 +177,7 @@ class MemoryStore {
       address: 'Bakrajo, Sulaimanyiah, Iraq',
       productName: 'Nike Air Max 270 Sneakers - Size 43',
       productUrl: 'https://nike.com/t/air-max-270',
-      productImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80',
+      productImage: '',
       quantity: 1,
       productPrice: 160.00,
       shippingFee: 20.00,
@@ -180,14 +188,11 @@ class MemoryStore {
       shippingMethod: 'Standard Air',
       trackingNumber: 'OC-551029-TR',
       estimatedDelivery: 'Sep 24, 2026',
-      status: 'Delivered',
+      status: 'Arrived',
       statusHistory: [
-        { status: 'Order Received', date: '2026-09-15T12:00:00Z', note: 'Created' },
-        { status: 'Order Confirmed', date: '2026-09-15T13:00:00Z', note: 'Confirmed' },
-        { status: 'Purchased', date: '2026-09-16T10:00:00Z', note: 'Purchased' },
-        { status: 'Shipped', date: '2026-09-18T15:00:00Z', note: 'Shipped from Istanbul' },
-        { status: 'Out for Delivery', date: '2026-09-23T09:00:00Z', note: 'Couriers en route' },
-        { status: 'Delivered', date: '2026-09-24T11:00:00Z', note: 'Delivered to customer & signed' },
+        { status: 'Purchased', date: '2026-09-16T10:00:00Z', note: 'Purchased from Turkey' },
+        { status: 'In Office', date: '2026-09-20T12:00:00Z', note: 'Received in regional office' },
+        { status: 'Arrived', date: '2026-09-24T11:00:00Z', note: 'Delivered to customer & signed' },
       ],
       createdAt: '2026-09-15T12:00:00Z',
       updatedAt: '2026-09-24T11:00:00Z',
@@ -201,7 +206,7 @@ class MemoryStore {
       address: 'Raniya, Kurdistan Region, Iraq',
       productName: 'Zara Oversized Winter Jacket (Dark Brown)',
       productUrl: 'https://zara.com/product/winter-jacket',
-      productImage: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&q=80',
+      productImage: '',
       quantity: 1,
       productPrice: 110.00,
       shippingFee: 15.00,
@@ -212,9 +217,9 @@ class MemoryStore {
       shippingMethod: 'Express Air',
       trackingNumber: '',
       estimatedDelivery: 'Oct 05, 2026',
-      status: 'Order Received',
+      status: 'Purchased',
       statusHistory: [
-        { status: 'Order Received', date: '2026-09-24T14:00:00Z', note: 'Order registered by admin' },
+        { status: 'Purchased', date: '2026-09-24T14:00:00Z', note: 'Order registered by admin' },
       ],
       createdAt: '2026-09-24T14:00:00Z',
       updatedAt: '2026-09-24T14:00:00Z',
@@ -228,7 +233,7 @@ class MemoryStore {
       address: 'Tavga Street, Sulaimanyiah, Iraq',
       productName: 'Anker PowerCore 20000mAh Power Bank',
       productUrl: 'https://anker.com/powercore',
-      productImage: 'https://images.unsplash.com/photo-1609592424009-28c0373e2a05?w=400&q=80',
+      productImage: '',
       quantity: 2,
       productPrice: 40.00,
       shippingFee: 10.00,
@@ -239,11 +244,10 @@ class MemoryStore {
       shippingMethod: 'Standard Cargo',
       trackingNumber: 'OC-112233-CN',
       estimatedDelivery: 'Oct 01, 2026',
-      status: 'Purchased',
+      status: 'In Office',
       statusHistory: [
-        { status: 'Order Received', date: '2026-09-22T08:00:00Z', note: 'Order placed' },
-        { status: 'Order Confirmed', date: '2026-09-22T09:30:00Z', note: 'Verified' },
-        { status: 'Purchased', date: '2026-09-23T11:00:00Z', note: 'Supplier invoice issued' },
+        { status: 'Purchased', date: '2026-09-22T08:00:00Z', note: 'Order placed' },
+        { status: 'In Office', date: '2026-09-23T11:00:00Z', note: 'Received at office' },
       ],
       createdAt: '2026-09-22T08:00:00Z',
       updatedAt: '2026-09-23T11:00:00Z',
@@ -251,24 +255,21 @@ class MemoryStore {
   ];
 
   public getNextOrderId(): string {
-    const year = new Date().getFullYear();
-    const prefix = `HB-${year}-`;
-    let maxNum = 0;
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let candidateId = '';
+    let exists = true;
+    let attempts = 0;
 
-    for (const ord of this.orders) {
-      if (ord.orderId.startsWith(prefix)) {
-        const parts = ord.orderId.split('-');
-        if (parts.length === 3) {
-          const num = parseInt(parts[2], 10);
-          if (!isNaN(num) && num > maxNum) {
-            maxNum = num;
-          }
-        }
+    while (exists && attempts < 100) {
+      attempts++;
+      let randomStr = '';
+      for (let i = 0; i < 8; i++) {
+        randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
       }
+      candidateId = `ORD-${randomStr}`;
+      exists = this.orders.some(o => o.orderId === candidateId);
     }
-
-    const nextNum = (maxNum + 1).toString().padStart(5, '0');
-    return `${prefix}${nextNum}`;
+    return candidateId;
   }
 
   public getAllOrders(): OrderData[] {
@@ -296,7 +297,7 @@ class MemoryStore {
       address: data.address || '',
       productName: data.productName || '',
       productUrl: data.productUrl || '',
-      productImage: data.productImage || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
+      productImage: data.productImage || '',
       quantity: Number(data.quantity) || 1,
       productPrice: Number(data.productPrice) || 0,
       shippingFee: Number(data.shippingFee) || 0,
@@ -307,14 +308,15 @@ class MemoryStore {
       shippingMethod: data.shippingMethod || 'Express Air',
       trackingNumber: data.trackingNumber || '',
       estimatedDelivery: data.estimatedDelivery || '',
-      status: data.status || 'Order Received',
+      status: data.status || 'Purchased',
       statusHistory: [
         {
-          status: data.status || 'Order Received',
+          status: data.status || 'Purchased',
           date: now,
           note: 'Order manually created in admin dashboard'
         }
       ],
+      notes: data.notes || '',
       createdAt: now,
       updatedAt: now,
     };
@@ -369,7 +371,13 @@ class MemoryStore {
 
   // Customer Methods
   public getAllCustomers(): CustomerData[] {
-    return this.customers;
+    const seen = new Set<string>();
+    return this.customers.filter(c => {
+      const key = c.customerId || c._id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
   public getCustomer(idOrCustomerId: string): CustomerData | undefined {
@@ -378,25 +386,46 @@ class MemoryStore {
     );
   }
 
-  public generateCustomerId(): string {
-    let maxNum = 1000;
-    for (const c of this.customers) {
-      if (c.customerId && c.customerId.startsWith('CUST-')) {
-        const num = parseInt(c.customerId.replace('CUST-', ''), 10);
-        if (!isNaN(num) && num > maxNum) maxNum = num;
-      }
+  public generateCustomerId(name?: string): string {
+    let prefix = '';
+    if (name && name.trim()) {
+      const clean = name.trim().toUpperCase().replace(/[^A-Z]/g, '');
+      const consonants = clean.replace(/[AEIOU]/g, '');
+      const source = consonants.length >= 4 ? consonants : clean;
+      prefix = source.slice(0, 4);
     }
-    return `CUST-${maxNum + 1}`;
+
+    const alpha = 'BCDFGHJKLMNPQRSTVWXYZ';
+    while (prefix.length < 4) {
+      prefix += alpha.charAt(Math.floor(Math.random() * alpha.length));
+    }
+
+    const existingIds = this.customers.map(c => c.customerId);
+    let fullId = '';
+    do {
+      const num = Math.floor(1000 + Math.random() * 9000);
+      fullId = `${prefix}-${num}`;
+    } while (existingIds.includes(fullId));
+
+    return fullId;
   }
 
   public addCustomer(data: Omit<CustomerData, '_id' | 'createdAt' | 'updatedAt' | 'customerId'> & { customerId?: string }): CustomerData {
     const now = new Date().toISOString();
-    const newId = data.customerId || this.generateCustomerId();
+    const newId = data.customerId || this.generateCustomerId(data.name);
+    
+    const existing = this.customers.find(c => c.customerId === newId);
+    if (existing) {
+      Object.assign(existing, data, { updatedAt: now });
+      return existing;
+    }
+
     const customer: CustomerData = {
-      _id: `cust_${Date.now()}`,
+      _id: `cust_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       customerId: newId,
       name: data.name,
       phone: data.phone,
+      secondaryPhone: data.secondaryPhone || '',
       email: data.email || '',
       address: data.address,
       notes: data.notes || '',
@@ -407,12 +436,38 @@ class MemoryStore {
     return customer;
   }
 
+  public updateCustomer(idOrCustomerId: string, data: Partial<CustomerData>): CustomerData | null {
+    const index = this.customers.findIndex(
+      c => c.customerId.toLowerCase() === idOrCustomerId.toLowerCase() || c._id === idOrCustomerId
+    );
+    if (index === -1) return null;
+    const cust = this.customers[index];
+    Object.assign(cust, data, { updatedAt: new Date().toISOString() });
+    this.customers[index] = cust;
+    return cust;
+  }
+
   public deleteCustomer(idOrCustomerId: string): boolean {
     const initialLen = this.customers.length;
     this.customers = this.customers.filter(
       c => c.customerId.toLowerCase() !== idOrCustomerId.toLowerCase() && c._id !== idOrCustomerId
     );
     return this.customers.length < initialLen;
+  }
+
+  public findUserByEmail(email: string): UserData | null {
+    const clean = email.trim().toLowerCase();
+    return this.users.find(u => u.email.toLowerCase() === clean) || null;
+  }
+
+  public addUser(user: Omit<UserData, '_id' | 'createdAt'>): UserData {
+    const newUser: UserData = {
+      ...user,
+      _id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      createdAt: new Date().toISOString()
+    };
+    this.users.push(newUser);
+    return newUser;
   }
 }
 

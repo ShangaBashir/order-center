@@ -29,14 +29,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = 'Das
   }
 
   return (
-    <div className="min-h-screen bg-[#EBEAE8] flex flex-col lg:flex-row text-[#2C2C2C]">
-      {/* Sidebar */}
+    <div className="min-h-screen w-full bg-[#EBEAE8] text-[#2C2C2C] relative">
+      {/* Sidebar (Fixed on desktop, drawer on mobile) */}
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
-      {/* Main View Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        {/* Top Navbar Header */}
-        <header className="bg-white border-b border-slate-200/80 px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+      {/* Main View Area - padded left by 64 (256px) on desktop to sit right beside fixed sidebar */}
+      <div className="flex-1 flex flex-col min-w-0 w-full lg:pl-64 min-h-screen">
+        {/* Top Navbar Header - Sticky at the top */}
+        <header className="bg-white border-b border-slate-200/80 px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileOpen(true)}
@@ -57,8 +57,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = 'Das
           </div>
         </header>
 
-        {/* Content Body */}
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
+        {/* Content Body - Full Width Edge-to-Edge */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full">
           {children}
         </main>
       </div>

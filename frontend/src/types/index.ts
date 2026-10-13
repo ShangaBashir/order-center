@@ -12,28 +12,14 @@ export interface LanguageConfig {
 
 // Order Status Enum
 export type OrderStatus =
-  | 'Order Received'
-  | 'Order Confirmed'
   | 'Purchased'
-  | 'Preparing'
-  | 'Shipped'
-  | 'In Transit'
-  | 'Arrived'
-  | 'Out for Delivery'
-  | 'Delivered'
-  | 'Cancelled';
+  | 'In Office'
+  | 'Arrived';
 
 export const ALL_ORDER_STATUSES: OrderStatus[] = [
-  'Order Received',
-  'Order Confirmed',
   'Purchased',
-  'Preparing',
-  'Shipped',
-  'In Transit',
-  'Arrived',
-  'Out for Delivery',
-  'Delivered',
-  'Cancelled'
+  'In Office',
+  'Arrived'
 ];
 
 export interface StatusHistoryItem {
@@ -64,6 +50,7 @@ export interface AdminOrder {
   estimatedDelivery?: string;
   status: OrderStatus;
   statusHistory: StatusHistoryItem[];
+  notes?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -86,18 +73,24 @@ export interface PublicTrackingData {
   updatedAt?: string;
 }
 
-export interface AdminUser {
+export interface AppUser {
   id: string;
   name: string;
   email: string;
-  role: string;
+  phone?: string;
+  role: 'admin' | 'user' | 'customer' | string;
+  isCustomer?: boolean;
+  customerId?: string;
 }
+
+export type AdminUser = AppUser;
 
 export interface Customer {
   _id?: string;
   customerId: string;
   name: string;
   phone: string;
+  secondaryPhone?: string;
   email?: string;
   address: string;
   notes?: string;

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
-  X, ExternalLink, Truck, User, Package, Edit, Trash2, CheckCircle2, RefreshCw
+  X, ExternalLink, Truck, User, Package, Edit, Trash2
 } from 'lucide-react';
-import { AdminOrder, OrderStatus, ALL_ORDER_STATUSES } from '../types';
+import { AdminOrder, OrderStatus } from '../types';
 import { StatusTimeline } from './StatusTimeline';
 import { useSettings } from '../context/SettingsContext';
 
@@ -11,7 +11,7 @@ import { ConfirmModal } from './ConfirmModal';
 interface OrderDetailsModalProps {
   order: AdminOrder | null;
   onClose: () => void;
-  onStatusUpdate: (orderId: string, status: OrderStatus, note?: string) => Promise<void>;
+  onStatusUpdate?: (orderId: string, status: OrderStatus, note?: string) => Promise<void>;
   onEditOrder: (order: AdminOrder) => void;
   onDeleteOrder: (orderId: string) => Promise<void>;
 }
@@ -19,40 +19,44 @@ interface OrderDetailsModalProps {
 export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   order,
   onClose,
-  onStatusUpdate,
   onEditOrder,
   onDeleteOrder
 }) => {
-  const { formatPriceWithIqd } = useSettings();
-  if (!order) return null;
+  const { usdToIqdRate, formatPriceWithIqd } = useSettings();
 
-  const [selectedStatus, setSelectedStatus] = useState<OrderStatus>(order.status);
-  const [statusNote, setStatusNote] = useState('');
-  const [updating, setUpdating] = useState(false);
-  const [successMsg, setSuccessMsg] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSecondDeleteConfirm, setShowSecondDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleUpdateStatus = async () => {
-    setUpdating(true);
-    setSuccessMsg('');
-    try {
-      await onStatusUpdate(order.orderId, selectedStatus, statusNote);
-      setSuccessMsg(`Status updated to "${selectedStatus}"`);
-      setStatusNote('');
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error('Failed to update status', err);
-    } finally {
-      setUpdating(false);
+  if (!order) return null;
+
+  const getStatusBadge = (status: OrderStatus) => {
+    switch (status) {
+      case 'Purchased':
+        return 'bg-amber-100 text-amber-800 border-amber-300';
+      case 'In Office':
+        return 'bg-sky-100 text-sky-800 border-sky-300';
+      case 'Arrived':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      default:
+        return 'bg-slate-100 text-slate-800 border-slate-300';
     }
+  };
+
+  const handleFirstDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleProceedToSecondConfirm = () => {
+    setShowDeleteConfirm(false);
+    setShowSecondDeleteConfirm(true);
   };
 
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
       await onDeleteOrder(order.orderId);
-      setShowDeleteConfirm(false);
+      setShowSecondDeleteConfirm(false);
       onClose();
     } finally {
       setIsDeleting(false);
@@ -70,7 +74,12 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               {order.orderId}
             </div>
             <div>
-              <h2 className="text-lg font-bold">Order Details</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold">Order Details</h2>
+                <span className={`px-2.5 py-0.5 rounded text-xs font-bold border shadow-xs ${getStatusBadge(order.status)}`}>
+                  {order.status}
+                </span>
+              </div>
               <p className="text-xs text-white/70">Created: {new Date(order.createdAt || '').toLocaleString()}</p>
             </div>
           </div>
@@ -84,7 +93,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               <span>Edit</span>
             </button>
             <button
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={handleFirstDeleteClick}
               className="px-3 py-1.5 rounded text-xs font-semibold bg-red-600/80 hover:bg-red-600 text-white flex items-center gap-1.5 transition"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -102,26 +111,19 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 sm:p-8 space-y-8 max-h-[80vh] overflow-y-auto bg-slate-50/50">
 
-          {successMsg && (
-            <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              <span>{successMsg}</span>
-            </div>
-          )}
-
           {/* Quick Info Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm">
             <div>
               <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Current Status</div>
-              <div className="text-sm font-bold text-[#711612] mt-0.5">{order.status}</div>
+              <div className="mt-1">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold border ${getStatusBadge(order.status)}`}>
+                  {order.status}
+                </span>
+              </div>
             </div>
             <div>
               <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Total Price</div>
               <div className="text-sm font-bold text-slate-800 mt-0.5">{formatPriceWithIqd(order.totalPrice).combinedStr}</div>
-            </div>
-            <div>
-              <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Tracking Number</div>
-              <div className="text-sm font-mono font-semibold text-slate-700 mt-0.5 truncate">{order.trackingNumber || 'Not assigned'}</div>
             </div>
             <div>
               <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Est. Delivery</div>
@@ -155,7 +157,6 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 <div><span className="font-semibold text-slate-900">Origin:</span> {order.originCountry}</div>
                 <div><span className="font-semibold text-slate-900">Destination:</span> {order.destinationCountry}</div>
                 <div><span className="font-semibold text-slate-900">Shipping Method:</span> {order.shippingMethod}</div>
-                <div><span className="font-semibold text-slate-900">Tracking Number:</span> <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{order.trackingNumber || 'Unassigned'}</span></div>
                 <div><span className="font-semibold text-slate-900">Est. Delivery:</span> {order.estimatedDelivery || 'Unscheduled'}</div>
               </div>
             </div>
@@ -181,73 +182,46 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-5 items-center">
-              {order.productImage ? (
-                <img
-                  src={order.productImage}
-                  alt={order.productName}
-                  className="w-24 h-24 object-cover rounded-md border border-slate-200 shadow-sm flex-shrink-0"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-md bg-slate-100 flex items-center justify-center text-slate-400">
-                  <Package className="w-8 h-8" />
+            <div className="space-y-3">
+              <h4 className="font-bold text-slate-900 text-base">{order.productName}</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block text-[11px] font-semibold">Quantity</span>
+                  <span className="font-bold text-slate-800 text-sm mt-0.5 block">{order.quantity || 1}</span>
                 </div>
-              )}
-
-              <div className="flex-1 space-y-2 text-sm text-slate-700">
-                <h4 className="font-bold text-slate-900 text-base">{order.productName}</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="bg-slate-50 p-2 rounded border"><span className="text-slate-400 block">Quantity</span> <span className="font-bold text-slate-800">{order.quantity}</span></div>
-                  <div className="bg-slate-50 p-2 rounded border"><span className="text-slate-400 block">Unit Price</span> <span className="font-bold text-slate-800">${order.productPrice.toFixed(2)}</span></div>
-                  <div className="bg-slate-50 p-2 rounded border"><span className="text-slate-400 block">Shipping Fee</span> <span className="font-bold text-slate-800">${order.shippingFee.toFixed(2)}</span></div>
-                  <div className="bg-slate-50 p-2 rounded border"><span className="text-slate-400 block">Total</span> <span className="font-bold text-[#711612]">{formatPriceWithIqd(order.totalPrice).combinedStr}</span></div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block text-[11px] font-semibold">Unit Price</span>
+                  <span className="font-bold text-slate-800 text-sm mt-0.5 block">
+                    {order.currency === 'IQD' ? `${(order.productPrice || 0).toLocaleString()} IQD` : `$${(order.productPrice || 0).toFixed(2)}`}
+                  </span>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* UPDATE STATUS CONTROLS */}
-          <div className="bg-white p-5 rounded-lg border border-[#D4AF37]/40 shadow-sm space-y-4">
-            <div className="text-[#711612] font-bold text-sm flex items-center justify-between border-b pb-2">
-              <span>UPDATE ORDER STATUS</span>
-              <span className="text-xs text-slate-400">Current: {order.status}</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="sm:col-span-1">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">New Status</label>
-                <select
-                  value={selectedStatus}
-                  onChange={e => setSelectedStatus(e.target.value as OrderStatus)}
-                  className="w-full text-sm border-slate-300 rounded-md shadow-sm focus:border-[#711612] focus:ring-[#711612] py-2 px-3 bg-white border"
-                >
-                  {ALL_ORDER_STATUSES.map(st => (
-                    <option key={st} value={st}>{st}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Admin Note (Optional)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={statusNote}
-                    onChange={e => setStatusNote(e.target.value)}
-                    placeholder="e.g. Cleared customs at Erbil Airport"
-                    className="flex-1 text-sm border-slate-300 rounded-md shadow-sm focus:border-[#711612] focus:ring-[#711612] py-2 px-3 border"
-                  />
-                  <button
-                    onClick={handleUpdateStatus}
-                    disabled={updating}
-                    className="px-4 py-2 rounded-md bg-[#711612] hover:bg-[#57100d] text-white text-xs font-bold uppercase tracking-wider transition shadow-sm flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    {updating ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Update Status'}
-                  </button>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block text-[11px] font-semibold">Shipping Fee</span>
+                  <span className="font-bold text-slate-800 text-sm mt-0.5 block">
+                    {order.currency === 'IQD' ? `${(order.shippingFee || 0).toLocaleString()} IQD` : `$${(order.shippingFee || 0).toFixed(2)}`}
+                  </span>
+                </div>
+                <div className="p-3 rounded-lg border border-[#D4AF37]/50 bg-amber-50/40">
+                  <span className="text-slate-500 block text-[11px] font-semibold">Total Price</span>
+                  <span className="font-extrabold text-[#711612] text-sm mt-0.5 block">
+                    {order.currency === 'IQD'
+                      ? `${(order.totalPrice || 0).toLocaleString()} IQD ($${((order.totalPrice || 0) / (usdToIqdRate || 1500)).toFixed(2)})`
+                      : formatPriceWithIqd(order.totalPrice || 0).combinedStr
+                    }
+                  </span>
                 </div>
               </div>
             </div>
           </div>
+
+
+          {/* ORDER NOTES */}
+          {order.notes && (
+            <div className="bg-amber-50/60 p-4 rounded-lg border border-[#D4AF37]/40 shadow-sm space-y-1 text-slate-800 text-xs">
+              <span className="font-bold text-[#711612] block uppercase tracking-wider">Order Notes</span>
+              <p className="whitespace-pre-wrap">{order.notes}</p>
+            </div>
+          )}
 
           {/* VISUAL STATUS TIMELINE */}
           <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
@@ -268,12 +242,23 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         isOpen={showDeleteConfirm}
         title="Delete Order"
         message={`Are you sure you want to delete order ${order.orderId}? This action cannot be undone.`}
-        confirmText="Delete Order"
+        confirmText="Yes, Delete Order"
+        cancelText="Cancel"
+        type="danger"
+        onConfirm={handleProceedToSecondConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <ConfirmModal
+        isOpen={showSecondDeleteConfirm}
+        title="Final Confirmation Required"
+        message={`PLEASE CONFIRM: Are you absolutely sure you want to permanently delete order ${order.orderId}? All details for this order will be permanently removed.`}
+        confirmText="Permanently Delete Order"
         cancelText="Cancel"
         type="danger"
         isLoading={isDeleting}
         onConfirm={handleDeleteConfirm}
-        onCancel={() => setShowDeleteConfirm(false)}
+        onCancel={() => setShowSecondDeleteConfirm(false)}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -22,11 +22,14 @@ import { AddCustomerPage } from './pages/AddCustomerPage';
 import { AdminSettings } from './pages/AdminSettings';
 import { PublicTrackingPage } from './pages/PublicTrackingPage';
 
+import { CustomerAuthPage } from './pages/CustomerAuthPage';
+import { UserAccountPage } from './pages/UserAccountPage';
+
 // Scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   }, [pathname]);
   return null;
 }
@@ -37,26 +40,11 @@ function MainLayout() {
     location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/track');
 
-  return (
-    <div className="min-h-screen flex flex-col bg-bg">
-      <ScrollToTop />
-      
-      {/* Show client header only on public store routes */}
-      {!isAdminOrTrackRoute && <Header />}
-
-      <main className="flex-grow">
+  if (isAdminOrTrackRoute) {
+    return (
+      <div className="min-h-screen w-full">
+        <ScrollToTop />
         <Routes>
-          {/* Public Website Routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/services" element={<ServicesPage />} />
-          <Route path="/offers" element={<OffersPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-
-          {/* Public Customer Tracking Route */}
-          <Route path="/track" element={<PublicTrackingPage />} />
-          <Route path="/tracking" element={<PublicTrackingPage />} />
-
           {/* Admin Dashboard Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
@@ -67,13 +55,41 @@ function MainLayout() {
           <Route path="/admin/add-customer" element={<AddCustomerPage />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
 
+          {/* Public Customer Tracking Route */}
+          <Route path="/track" element={<PublicTrackingPage />} />
+          <Route path="/tracking" element={<PublicTrackingPage />} />
+        </Routes>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-bg">
+      <ScrollToTop />
+      <Header />
+
+      <main className="flex-grow">
+        <Routes>
+          {/* Public Website Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/offers" element={<OffersPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+
+          {/* Customer Auth & Account Routes */}
+          <Route path="/login" element={<CustomerAuthPage />} />
+          <Route path="/register" element={<CustomerAuthPage />} />
+          <Route path="/auth" element={<CustomerAuthPage />} />
+          <Route path="/account" element={<UserAccountPage />} />
+          <Route path="/profile" element={<UserAccountPage />} />
+
           {/* Catch-all fallback */}
           <Route path="*" element={<HomePage />} />
         </Routes>
       </main>
 
-      {/* Show client footer only on public store routes */}
-      {!isAdminOrTrackRoute && <Footer />}
+      <Footer />
     </div>
   );
 }

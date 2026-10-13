@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  Phone, Mail, MessageCircle, MapPin, CheckCircle, AlertCircle, Link2
+  Phone, Mail, MessageCircle, MapPin, CheckCircle, Link2
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { UserPlus, ArrowLeft, CheckCircle2, User, Phone, Mail, MapPin, FileText, Hash } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
 import { customerApi } from '../api';
+import { formatPhoneNumber } from '../utils/formatters';
 
 export const AddCustomerPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,20 +14,38 @@ export const AddCustomerPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    secondaryPhone: '',
     email: '',
     address: '',
     notes: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'phone' || name === 'secondaryPhone') {
+      setFormData({ ...formData, [name]: formatPhoneNumber(value) });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const isDuplicatePhone = () => {
+    const p1 = formData.phone.replace(/\D/g, '');
+    const p2 = formData.secondaryPhone.replace(/\D/g, '');
+    return !!(p1 && p2 && p1 === p2);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg('');
     setSuccessNotice(null);
+
+    if (isDuplicatePhone()) {
+      setErrorMsg('Primary and secondary phone numbers cannot be the same.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await customerApi.createCustomer(formData);
@@ -71,7 +90,7 @@ export const AddCustomerPage: React.FC = () => {
               <div>
                 <h1 className="text-xl font-bold font-display tracking-wide">Register New Customer</h1>
                 <p className="text-xs text-white/80 mt-0.5">
-                  System will automatically assign a unique customer ID (e.g. CUST-1006).
+                  System will automatically assign a unique customer ID.
                 </p>
               </div>
             </div>
@@ -103,7 +122,7 @@ export const AddCustomerPage: React.FC = () => {
           )}
 
           {/* Main Form Body */}
-          <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
+          <form onSubmit={handleSubmit} autoComplete="off" className="p-6 md:p-8 space-y-6">
             
             {/* Customer Basic Info Section */}
             <div className="space-y-4">
@@ -123,9 +142,10 @@ export const AddCustomerPage: React.FC = () => {
                       type="text"
                       name="name"
                       required
+                      autoComplete="off"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="e.g. Shanga Bashir"
+                      placeholder=""
                       className="w-full pl-9 pr-4 py-2.5 text-sm border-slate-300 rounded-xl shadow-sm focus:border-[#711612] focus:ring-[#711612] border"
                     />
                   </div>
@@ -141,10 +161,13 @@ export const AddCustomerPage: React.FC = () => {
                       type="text"
                       name="phone"
                       required
+                      autoComplete="off"
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder="e.g. 07701566233"
-                      className="w-full pl-9 pr-4 py-2.5 text-sm border-slate-300 rounded-xl shadow-sm focus:border-[#711612] focus:ring-[#711612] border font-mono"
+                      placeholder=""
+                      className={`w-full pl-9 pr-4 py-2.5 text-sm border rounded-xl shadow-sm focus:ring-[#711612] font-mono ${
+                        isDuplicatePhone() ? 'border-red-500 focus:border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
+                      }`}
                     />
                   </div>
                 </div>
@@ -158,15 +181,41 @@ export const AddCustomerPage: React.FC = () => {
                     <input
                       type="email"
                       name="email"
+                      autoComplete="off"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="e.g. customer@example.com"
+                      placeholder=""
                       className="w-full pl-9 pr-4 py-2.5 text-sm border-slate-300 rounded-xl shadow-sm focus:border-[#711612] focus:ring-[#711612] border"
                     />
                   </div>
                 </div>
 
                 <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Second Phone Number <span className="text-xs font-normal text-slate-400">(Optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      name="secondaryPhone"
+                      autoComplete="off"
+                      value={formData.secondaryPhone}
+                      onChange={handleChange}
+                      placeholder=""
+                      className={`w-full pl-9 pr-4 py-2.5 text-sm border rounded-xl shadow-sm focus:ring-[#711612] font-mono ${
+                        isDuplicatePhone() ? 'border-red-500 focus:border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
+                      }`}
+                    />
+                  </div>
+                  {isDuplicatePhone() && (
+                    <p className="text-xs font-semibold text-red-600 mt-1 flex items-center gap-1">
+                      <span>⚠️ Primary and secondary phone numbers cannot be the same.</span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Delivery Address <span className="text-red-500">*</span>
                   </label>
@@ -176,9 +225,10 @@ export const AddCustomerPage: React.FC = () => {
                       type="text"
                       name="address"
                       required
+                      autoComplete="off"
                       value={formData.address}
                       onChange={handleChange}
-                      placeholder="e.g. Salim Street, Sulaimanyiah, Iraq"
+                      placeholder=""
                       className="w-full pl-9 pr-4 py-2.5 text-sm border-slate-300 rounded-xl shadow-sm focus:border-[#711612] focus:ring-[#711612] border"
                     />
                   </div>
@@ -213,8 +263,8 @@ export const AddCustomerPage: React.FC = () => {
               </Link>
               <button
                 type="submit"
-                disabled={loading}
-                className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#711612] to-[#8B1E1A] hover:from-[#8B1E1A] hover:to-[#711612] transition shadow-lg shadow-red-950/30 flex items-center gap-2 border border-[#D4AF37]/30 disabled:opacity-50"
+                disabled={loading || isDuplicatePhone()}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#711612] to-[#8B1E1A] hover:from-[#8B1E1A] hover:to-[#711612] transition shadow-lg shadow-red-950/30 flex items-center gap-2 border border-[#D4AF37]/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

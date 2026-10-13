@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
-  Search, PlusCircle, Eye, Edit, Trash2, Filter, ArrowUpDown
+  Search, PlusCircle, Eye, Edit, Trash2, Filter, ArrowUpDown, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
 import { orderApi } from '../api';
@@ -10,18 +10,26 @@ import { OrderDetailsModal } from '../components/OrderDetailsModal';
 import { EditOrderModal } from '../components/EditOrderModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useSettings } from '../context/SettingsContext';
+import { useRealtimeOrders, broadcastLocalOrderEvent } from '../utils/realtime';
+
+const ITEMS_PER_PAGE = 10;
 
 export const AdminOrders: React.FC = () => {
   const { formatPriceWithIqd } = useSettings();
+  const [searchParams] = useSearchParams();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get('search') || searchParams.get('customer') || searchParams.get('q') || ''
+  );
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'price_desc' | 'price_asc'>('date_desc');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [editOrder, setEditOrder] = useState<AdminOrder | null>(null);
-  const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<AdminOrder | null>(null);
+  const [deleteFirstConfirm, setDeleteFirstConfirm] = useState<AdminOrder | null>(null);
+  const [deleteSecondConfirm, setDeleteSecondConfirm] = useState<AdminOrder | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const loadOrders = async () => {
@@ -40,7 +48,35 @@ export const AdminOrders: React.FC = () => {
     loadOrders();
   }, []);
 
+  // Reset pagination on filter/sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, sortBy]);
+
+  // Synchronize URL query params (for jumping to customer orders or specific order)
+  useEffect(() => {
+    const q = searchParams.get('search') || searchParams.get('customer') || searchParams.get('q');
+    if (q && q !== searchQuery) {
+      setSearchQuery(q);
+    }
+    const targetOrderId = searchParams.get('orderId');
+    if (targetOrderId && orders.length > 0) {
+      const match = orders.find(
+        o => o.orderId.toLowerCase() === targetOrderId.toLowerCase() || o._id === targetOrderId
+      );
+      if (match) {
+        setSelectedOrder(match);
+      }
+    }
+  }, [searchParams, orders]);
+
+  // Listen to realtime updates across browser tabs & backend SSE
+  useRealtimeOrders(() => {
+    loadOrders();
+  });
+
   const handleStatusUpdate = async (orderId: string, status: OrderStatus, note?: string) => {
+    broadcastLocalOrderEvent({ type: 'ORDER_STATUS_UPDATED', orderId, status });
     await orderApi.updateOrderStatus(orderId, status, note);
     await loadOrders();
     if (selectedOrder && selectedOrder.orderId === orderId) {
@@ -50,18 +86,20 @@ export const AdminOrders: React.FC = () => {
   };
 
   const handleSaveEdit = async (orderId: string, updates: Partial<AdminOrder>) => {
+    broadcastLocalOrderEvent({ type: 'ORDER_UPDATED', orderId, status: updates.status });
     await orderApi.updateOrder(orderId, updates);
     await loadOrders();
   };
 
   const handleDeleteOrder = async (orderId: string) => {
+    broadcastLocalOrderEvent({ type: 'ORDER_DELETED', orderId });
     setIsDeleting(true);
     try {
       await orderApi.deleteOrder(orderId);
       await loadOrders();
     } finally {
       setIsDeleting(false);
-      setDeleteConfirmOrder(null);
+      setDeleteSecondConfirm(null);
     }
   };
 
@@ -88,14 +126,19 @@ export const AdminOrders: React.FC = () => {
     return 0;
   });
 
+  // Pagination calculation
+  const totalOrders = sortedOrders.length;
+  const totalPages = Math.ceil(totalOrders / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalOrders);
+  const paginatedOrders = sortedOrders.slice(startIndex, endIndex);
+
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
-      case 'Delivered': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-      case 'Cancelled': return 'bg-red-100 text-red-800 border-red-300';
-      case 'In Transit':
-      case 'Shipped':
-      case 'Out for Delivery': return 'bg-amber-100 text-amber-800 border-amber-300';
-      default: return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'Arrived': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      case 'In Office': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'Purchased':
+      default: return 'bg-amber-100 text-amber-800 border-amber-300';
     }
   };
 
@@ -131,7 +174,7 @@ export const AdminOrders: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by Order ID, Customer, Tracking..."
+              placeholder="Search"
               className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-md focus:border-[#711612] bg-white shadow-sm"
             />
           </div>
@@ -147,7 +190,7 @@ export const AdminOrders: React.FC = () => {
                 onChange={e => setStatusFilter(e.target.value)}
                 className="text-xs border border-slate-300 rounded-md py-1.5 px-3 bg-white font-medium text-slate-700 shadow-sm"
               >
-                <option value="ALL">All Statuses ({orders.length})</option>
+                <option value="ALL">All Statuses ({ALL_ORDER_STATUSES.length})</option>
                 {ALL_ORDER_STATUSES.map(st => (
                   <option key={st} value={st}>{st}</option>
                 ))}
@@ -177,77 +220,75 @@ export const AdminOrders: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-100/70 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4">Order ID</th>
-                  <th className="py-3.5 px-4">Customer</th>
-                  <th className="py-3.5 px-4">Product</th>
-                  <th className="py-3.5 px-4">Price</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Tracking #</th>
-                  <th className="py-3.5 px-4">Est. Delivery</th>
-                  <th className="py-3.5 px-4">Created Date</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                <tr className="bg-slate-100/70 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-4 px-4">Order ID</th>
+                  <th className="py-4 px-4">Customer</th>
+                  <th className="py-4 px-4">Product</th>
+                  <th className="py-4 px-4">Price</th>
+                  <th className="py-4 px-4">Status</th>
+                  <th className="py-4 px-4">Est. Delivery</th>
+                  <th className="py-4 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
-                {sortedOrders.length === 0 ? (
+              <tbody className="divide-y divide-slate-200 text-sm text-slate-700">
+                {loading ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                      Loading orders...
+                    </td>
+                  </tr>
+                ) : paginatedOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-slate-400">
                       No orders found matching filter criteria.
                     </td>
                   </tr>
                 ) : (
-                  sortedOrders.map(ord => (
+                  paginatedOrders.map(ord => (
                     <tr key={ord.orderId} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-[#711612]">
+                      <td className="py-4 px-4 font-mono font-bold text-[#711612] text-sm">
                         {ord.orderId}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-900">{ord.customerName}</div>
-                        <div className="text-[10px] text-slate-400">{ord.phone}</div>
+                      <td className="py-4 px-4">
+                        <div className="font-semibold text-slate-900 text-sm">{ord.customerName}</div>
+                        <div className="text-xs text-slate-400 font-mono mt-0.5">{ord.phone}</div>
                       </td>
-                      <td className="py-3.5 px-4 max-w-xs truncate font-medium">
+                      <td className="py-4 px-4 max-w-xs truncate font-medium text-sm">
                         {ord.productName}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-800">
+                      <td className="py-4 px-4 font-bold text-slate-800 text-sm">
                         {formatPriceWithIqd(ord.totalPrice).combinedStr}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${getStatusBadge(ord.status)}`}>
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-bold border ${getStatusBadge(ord.status)}`}>
                           {ord.status}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-[11px]">
-                        {ord.trackingNumber || <span className="text-slate-300">Unassigned</span>}
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-700">
+                      <td className="py-4 px-4 font-medium text-slate-700 text-sm">
                         {ord.estimatedDelivery || 'Pending'}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-500">
-                        {new Date(ord.createdAt || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="py-4 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setSelectedOrder(ord)}
-                            className="p-1.5 rounded bg-slate-100 hover:bg-[#711612] text-slate-700 hover:text-white transition"
+                            className="p-2 rounded bg-slate-100 hover:bg-[#711612] text-slate-700 hover:text-white transition"
                             title="View Order Details & Timeline"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setEditOrder(ord)}
-                            className="p-1.5 rounded bg-slate-100 hover:bg-[#711612] text-slate-700 hover:text-white transition"
+                            className="p-2 rounded bg-slate-100 hover:bg-[#711612] text-[#711612] hover:text-white transition"
                             title="Edit Order Info"
                           >
-                            <Edit className="w-3.5 h-3.5" />
+                            <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => setDeleteConfirmOrder(ord)}
-                            className="p-1.5 rounded bg-red-50 hover:bg-red-600 text-red-600 hover:text-white transition"
+                            onClick={() => setDeleteFirstConfirm(ord)}
+                            className="p-2 rounded bg-red-50 hover:bg-red-600 text-red-600 hover:text-white transition"
                             title="Delete Order"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -256,6 +297,52 @@ export const AdminOrders: React.FC = () => {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination Footer */}
+          <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+            <div>
+              Showing <span className="font-bold text-slate-900">{totalOrders > 0 ? startIndex + 1 : 0}</span> to{' '}
+              <span className="font-bold text-slate-900">{endIndex}</span> of{' '}
+              <span className="font-bold text-[#711612] font-mono">{totalOrders}</span> Total Orders
+              <span className="ml-2 text-slate-400">(Page {currentPage} of {totalPages})</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-300 hover:bg-white text-slate-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Prev</span>
+              </button>
+
+              <div className="flex items-center gap-1 font-semibold">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-7 h-7 rounded-lg text-xs font-bold transition ${
+                      currentPage === page
+                        ? 'bg-[#711612] text-white shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-200 border border-slate-300'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-300 hover:bg-white text-slate-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -276,15 +363,30 @@ export const AdminOrders: React.FC = () => {
       />
 
       <ConfirmModal
-        isOpen={!!deleteConfirmOrder}
+        isOpen={!!deleteFirstConfirm}
         title="Delete Order"
-        message={deleteConfirmOrder ? `Are you sure you want to delete order ${deleteConfirmOrder.orderId}? This action cannot be undone.` : ''}
-        confirmText="Delete Order"
+        message={deleteFirstConfirm ? `Are you sure you want to delete order ${deleteFirstConfirm.orderId}? This action cannot be undone.` : ''}
+        confirmText="Yes, Delete Order"
+        cancelText="Cancel"
+        type="danger"
+        onConfirm={() => {
+          const target = deleteFirstConfirm;
+          setDeleteFirstConfirm(null);
+          setDeleteSecondConfirm(target);
+        }}
+        onCancel={() => setDeleteFirstConfirm(null)}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteSecondConfirm}
+        title="Final Confirmation Required"
+        message={deleteSecondConfirm ? `PLEASE CONFIRM: Are you absolutely sure you want to permanently delete order ${deleteSecondConfirm.orderId}? All details for this order will be permanently removed.` : ''}
+        confirmText="Permanently Delete Order"
         cancelText="Cancel"
         type="danger"
         isLoading={isDeleting}
-        onConfirm={() => deleteConfirmOrder && handleDeleteOrder(deleteConfirmOrder.orderId)}
-        onCancel={() => setDeleteConfirmOrder(null)}
+        onConfirm={() => deleteSecondConfirm && handleDeleteOrder(deleteSecondConfirm.orderId)}
+        onCancel={() => setDeleteSecondConfirm(null)}
       />
     </AdminLayout>
   );

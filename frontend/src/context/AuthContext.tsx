@@ -7,6 +7,14 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   login: (email: string, pass: string) => Promise<void>;
+  register: (data: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    isCustomer?: boolean;
+    customerId?: string;
+  }) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -41,6 +49,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('ordercenter_admin_user', JSON.stringify(data.user));
   };
 
+  const register = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    isCustomer?: boolean;
+    customerId?: string;
+  }) => {
+    const res = await orderApi.register(data);
+    setToken(res.token);
+    setUser(res.user);
+    localStorage.setItem('ordercenter_admin_token', res.token);
+    localStorage.setItem('ordercenter_admin_user', JSON.stringify(res.user));
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -55,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         isAuthenticated: !!token && !!user,
         login,
+        register,
         logout,
         loading
       }}

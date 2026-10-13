@@ -1,45 +1,29 @@
 import { Router, Response } from 'express';
+import mongoose from 'mongoose';
 import Customer from '../models/Customer';
 import Order from '../models/Order';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { memoryStore } from '../memoryStore';
 
 const router = Router();
+const isDbConnected = () => mongoose.connection.readyState === 1;
 
-// Helper to generate unique CUST-XXXX Customer ID
-async function generateUniqueCustomerId(): Promise<string> {
-  let maxNum = 1000;
-  try {
-    const latestCust = await Customer.findOne({ customerId: /^CUST-/ })
-      .sort({ createdAt: -1 })
-      .lean();
-    if (latestCust && latestCust.customerId) {
-      const num = parseInt(latestCust.customerId.replace('CUST-', ''), 10);
-      if (!isNaN(num) && num > maxNum) maxNum = num;
-    }
-  } catch (e) {
-    // ignore
-  }
-
-  // Also check memory store
-  const memCusts = memoryStore.getAllCustomers();
-  for (const c of memCusts) {
-    if (c.customerId && c.customerId.startsWith('CUST-')) {
-      const num = parseInt(c.customerId.replace('CUST-', ''), 10);
-      if (!isNaN(num) && num > maxNum) maxNum = num;
-    }
-  }
-
-  return `CUST-${maxNum + 1}`;
+// Helper to generate unique Customer ID with distinct 4-letter prefix and 4 digits
+async function generateUniqueCustomerId(name?: string): Promise<string> {
+  return memoryStore.generateCustomerId(name);
 }
 
 // 1. GET /api/customers - List all customers with aggregate order stats
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     let customersList: any[] = [];
-    try {
-      customersList = await Customer.find().sort({ createdAt: -1 }).lean();
-    } catch (e) {
+    if (isDbConnected()) {
+      try {
+        customersList = await Customer.find().sort({ createdAt: -1 }).lean();
+      } catch (e) {
+        customersList = memoryStore.getAllCustomers();
+      }
+    } else {
       customersList = memoryStore.getAllCustomers();
     }
 
@@ -47,11 +31,24 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       customersList = memoryStore.getAllCustomers();
     }
 
+    // Deduplicate by customerId / _id
+    const seenCust = new Set<string>();
+    customersList = customersList.filter(c => {
+      const key = c.customerId || c._id;
+      if (seenCust.has(key)) return false;
+      seenCust.add(key);
+      return true;
+    });
+
     // Fetch order statistics
     let ordersList: any[] = [];
-    try {
-      ordersList = await Order.find().lean();
-    } catch (e) {
+    if (isDbConnected()) {
+      try {
+        ordersList = await Order.find().lean();
+      } catch (e) {
+        ordersList = memoryStore.getAllOrders();
+      }
+    } else {
       ordersList = memoryStore.getAllOrders();
     }
     if (!ordersList || ordersList.length === 0) {
@@ -83,13 +80,19 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // 2. POST /api/customers - Create new customer
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { name, phone, email, address, notes } = req.body;
+    const { name, phone, secondaryPhone, email, address, notes } = req.body;
 
     if (!name || !phone || !address) {
       return res.status(400).json({ message: 'Customer name, phone, and address are required' });
     }
 
-    const customerId = await generateUniqueCustomerId();
+    const cleanPhone = (phone || '').replace(/\D/g, '');
+    const cleanSecondary = (secondaryPhone || '').replace(/\D/g, '');
+    if (cleanSecondary && cleanPhone && cleanPhone === cleanSecondary) {
+      return res.status(400).json({ message: 'Primary and secondary phone numbers cannot be the same' });
+    }
+
+    const customerId = await generateUniqueCustomerId(name);
 
     let createdCustomer: any;
     try {
@@ -97,6 +100,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         customerId,
         name,
         phone,
+        secondaryPhone: secondaryPhone || '',
         email: email || '',
         address,
         notes: notes || '',
@@ -108,17 +112,19 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         customerId,
         name,
         phone,
+        secondaryPhone: secondaryPhone || '',
         email: email || '',
         address,
         notes: notes || '',
       });
     }
 
-    // Ensure it's in memory store as well
+    // Always keep memory store updated without duplicating
     memoryStore.addCustomer({
       customerId,
       name,
       phone,
+      secondaryPhone: secondaryPhone || '',
       email: email || '',
       address,
       notes: notes || '',
@@ -134,7 +140,43 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// 3. DELETE /api/customers/:id
+// 3. PUT /api/customers/:id - Update customer details
+router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, secondaryPhone, email, address, notes } = req.body;
+
+    const cleanPhone = (phone || '').replace(/\D/g, '');
+    const cleanSecondary = (secondaryPhone || '').replace(/\D/g, '');
+    if (cleanSecondary && cleanPhone && cleanPhone === cleanSecondary) {
+      return res.status(400).json({ message: 'Primary and secondary phone numbers cannot be the same' });
+    }
+
+    let updatedCust: any = null;
+    try {
+      updatedCust = await Customer.findOneAndUpdate(
+        { $or: [{ _id: id }, { customerId: id }] },
+        { name, phone, secondaryPhone: secondaryPhone || '', email, address, notes },
+        { new: true }
+      ).lean();
+    } catch (e) {
+      // ignore
+    }
+
+    const memUpdated = memoryStore.updateCustomer(id, { name, phone, secondaryPhone: secondaryPhone || '', email, address, notes });
+    if (!updatedCust) updatedCust = memUpdated;
+
+    if (!updatedCust) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    res.json({ message: 'Customer updated successfully', customer: updatedCust });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Error updating customer', error: err.message });
+  }
+});
+
+// 4. DELETE /api/customers/:id
 router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;

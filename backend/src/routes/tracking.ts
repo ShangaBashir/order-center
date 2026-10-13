@@ -1,8 +1,26 @@
 import { Router } from 'express';
 import Order from '../models/Order';
 import { memoryStore } from '../memoryStore';
+import { realtimeHub } from '../realtime';
 
 const router = Router();
+
+// GET /api/tracking/events (Real-time SSE event stream for live tracking updates)
+router.get('/events', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'X-Accel-Buffering': 'no'
+  });
+
+  const clientId = realtimeHub.addClient(res);
+
+  req.on('close', () => {
+    realtimeHub.removeClient(clientId);
+  });
+});
 
 // GET /api/tracking/:orderId (Public endpoint for customer tracking)
 router.get('/:orderId', async (req, res) => {

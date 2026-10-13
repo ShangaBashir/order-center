@@ -68,7 +68,7 @@ export const AdminLogin: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 text-sm border-slate-300 rounded-md shadow-sm focus:border-[#711612] focus:ring-[#711612] border"
-                placeholder="admin@ordercenter.iq"
+                placeholder=""
               />
             </div>
           </div>
@@ -85,24 +85,9 @@ export const AdminLogin: React.FC = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 text-sm border-slate-300 rounded-md shadow-sm focus:border-[#711612] focus:ring-[#711612] border"
-                placeholder="••••••••"
+                placeholder=""
               />
             </div>
-          </div>
-
-          {/* Demo quick info helper */}
-          <div className="bg-[#EBEAE8] p-3 rounded text-[11px] text-slate-600 border border-slate-200 flex items-center justify-between">
-            <div>
-              <span className="font-bold text-[#711612]">Admin Access Required</span>
-              <div className="text-[10px] text-slate-500 font-mono mt-0.5">admin@ordercenter.iq / admin123</div>
-            </div>
-            <button
-              type="button"
-              onClick={() => { setEmail('admin@ordercenter.iq'); setPassword('admin123'); }}
-              className="px-2.5 py-1 text-[10px] font-bold bg-[#711612] text-white hover:bg-[#57100d] rounded transition"
-            >
-              Auto-fill Demo
-            </button>
           </div>
 
           <button

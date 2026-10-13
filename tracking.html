@@ -96,101 +96,119 @@
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <i data-lucide="map-pin" class="h-12 w-12 text-accent mx-auto mb-6"></i>
         <h1 class="text-4xl font-bold text-text mb-4">Track Your Order</h1>
-        <p class="text-lg text-gray-600 mb-10">Enter your order or tracking number to see the current status of your package.</p>
+        <p class="text-lg text-gray-600 mb-8">Enter your Order ID or tracking number to see live status updates of your shipment.</p>
         
-        <form class="flex flex-col sm:flex-row gap-4 justify-center" onsubmit="event.preventDefault(); document.getElementById('tracking-result').classList.remove('hidden');">
-          <input type="text" placeholder="Enter tracking number (e.g., GO-123456)" class="flex-grow max-w-md px-6 py-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-lg shadow-sm" required>
-          <button type="submit" class="btn-primary text-lg">Track Order</button>
+        <form id="track-form" class="flex flex-col sm:flex-row gap-4 justify-center">
+          <input 
+            type="text" 
+            id="track-input" 
+            placeholder="Enter Order ID (e.g. HB-2026-00001)" 
+            class="flex-grow max-w-md px-6 py-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-lg shadow-sm font-mono font-medium" 
+            required
+          >
+          <button type="submit" id="track-submit-btn" class="btn-primary text-lg flex items-center justify-center gap-2">
+            <span>Track Order</span>
+          </button>
         </form>
+
+        <div id="track-error" class="hidden mt-4 p-4 rounded-lg bg-red-50 text-red-700 text-sm font-medium border border-red-200 max-w-md mx-auto"></div>
       </div>
     </section>
 
-    <!-- Tracking Result (Hidden by default) -->
+    <!-- Tracking Result -->
     <section id="tracking-result" class="py-12 bg-bg hidden">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden divide-y divide-gray-100">
           
-          <div class="flex flex-col md:flex-row justify-between border-b border-gray-100 pb-6 mb-8 gap-4">
+          <div class="bg-[#711612] text-white p-6 sm:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <p class="text-sm text-gray-500">Order Number</p>
-              <p class="text-xl font-bold text-text">GO-123456</p>
+              <span class="text-xs uppercase tracking-wider text-[#D4AF37] font-bold block mb-1">
+                Order ID: <span id="res-order-id" class="font-mono">--</span>
+              </span>
+              <h2 id="res-product-name" class="text-2xl font-bold">--</h2>
+              <p class="text-xs text-white/80 mt-1">Customer: <span id="res-customer-name" class="font-semibold text-white">--</span> • Total: <span id="res-total" class="font-bold text-[#D4AF37]">--</span></p>
             </div>
-            <div>
-              <p class="text-sm text-gray-500">Status</p>
-              <p class="text-xl font-bold text-accent">In Transit</p>
+
+            <div class="bg-white/10 backdrop-blur p-4 rounded-xl border border-white/20 text-right sm:min-w-[200px]" id="status-card-box">
+              <div class="flex items-center justify-end gap-1.5 mb-1">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="text-[10px] text-emerald-300 font-bold uppercase tracking-wider">Live Real-Time</span>
+              </div>
+              <p class="text-[10px] text-white/70 uppercase tracking-wider">Current Status</p>
+              <p id="res-status-badge" class="text-xl font-extrabold text-[#D4AF37] mt-0.5">Purchased</p>
+              <p id="res-updated-at" class="text-[10px] text-white/60 mt-1">Updated: Just now</p>
             </div>
-            <div>
-              <p class="text-sm text-gray-500">Estimated Delivery</p>
-              <p class="text-xl font-bold text-text">Oct 5, 2026</p>
+          </div>
+
+          <!-- Overview Details -->
+          <div class="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50/70 text-xs">
+            <div class="bg-white p-3.5 rounded-lg border border-gray-200">
+              <span class="text-gray-400 font-bold uppercase tracking-wider block text-[10px]">Origin</span>
+              <span id="res-origin" class="font-bold text-gray-800 text-sm block mt-0.5">--</span>
+            </div>
+            <div class="bg-white p-3.5 rounded-lg border border-gray-200">
+              <span class="text-gray-400 font-bold uppercase tracking-wider block text-[10px]">Destination</span>
+              <span id="res-destination" class="font-bold text-gray-800 text-sm block mt-0.5">--</span>
+            </div>
+            <div class="bg-white p-3.5 rounded-lg border border-gray-200">
+              <span class="text-gray-400 font-bold uppercase tracking-wider block text-[10px]">Estimated Delivery</span>
+              <span id="res-delivery" class="font-bold text-[#711612] text-sm block mt-0.5">--</span>
             </div>
           </div>
 
           <!-- Timeline -->
-          <div class="relative py-4 pl-4 md:pl-0">
-            <!-- Line -->
-            <div class="absolute left-6 md:left-1/2 top-0 bottom-0 w-0.5 bg-gray-200 -ml-px"></div>
+          <div class="p-6 sm:p-8 space-y-4">
+            <h3 class="text-xs font-bold text-[#711612] uppercase tracking-wider border-b pb-2">
+              Shipment Progress Lifecycle
+            </h3>
             
-            <div class="space-y-8 relative">
-              <!-- Step 1 -->
-              <div class="flex items-center md:justify-between w-full">
-                <div class="hidden md:block w-5/12 text-right pr-8">
-                  <p class="text-sm text-gray-500">Sep 20, 10:00 AM</p>
+            <div class="relative py-4 pl-4 md:pl-0">
+              <div class="absolute left-6 md:left-1/2 top-0 bottom-0 w-0.5 bg-gray-200 -ml-px"></div>
+              
+              <div class="space-y-8 relative">
+                <!-- Step 1: Purchased -->
+                <div class="flex items-center md:justify-between w-full" id="timeline-step-purchased">
+                  <div class="hidden md:block w-5/12 text-right pr-8">
+                    <p class="text-xs text-gray-500 font-mono" id="time-step-1">--</p>
+                  </div>
+                  <div class="z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-gray-300" id="dot-step-1"></div>
+                  <div class="pl-12 md:pl-8 md:w-5/12">
+                    <h4 class="font-bold text-sm text-gray-700" id="title-step-1">1. Purchased</h4>
+                    <p class="text-xs text-gray-500">Order successfully purchased and placed with merchant.</p>
+                  </div>
                 </div>
-                <div class="z-10 w-4 h-4 bg-brand rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2"></div>
-                <div class="pl-12 md:pl-8 md:w-5/12">
-                  <h4 class="font-bold text-brand">Order Received</h4>
-                  <p class="text-sm text-gray-600 md:hidden">Sep 20, 10:00 AM</p>
-                </div>
-              </div>
 
-              <!-- Step 2 -->
-              <div class="flex items-center md:justify-between w-full">
-                <div class="hidden md:block w-5/12 text-right pr-8">
-                  <p class="text-sm text-gray-500">Sep 21, 09:30 AM</p>
+                <!-- Step 2: In Office -->
+                <div class="flex items-center md:justify-between w-full" id="timeline-step-inoffice">
+                  <div class="hidden md:block w-5/12 text-right pr-8">
+                    <p class="text-xs text-gray-500 font-mono" id="time-step-2">--</p>
+                  </div>
+                  <div class="z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-gray-300" id="dot-step-2"></div>
+                  <div class="pl-12 md:pl-8 md:w-5/12">
+                    <h4 class="font-bold text-sm text-gray-700" id="title-step-2">2. In Office</h4>
+                    <p class="text-xs text-gray-500">Package has arrived at our handling office.</p>
+                  </div>
                 </div>
-                <div class="z-10 w-4 h-4 bg-brand rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2"></div>
-                <div class="pl-12 md:pl-8 md:w-5/12">
-                  <h4 class="font-bold text-brand">Purchased</h4>
-                  <p class="text-sm text-gray-500">Item purchased from Amazon.</p>
-                </div>
-              </div>
 
-              <!-- Step 3 -->
-              <div class="flex items-center md:justify-between w-full">
-                <div class="hidden md:block w-5/12 text-right pr-8">
-                  <p class="text-sm text-gray-500">Sep 23, 14:15 PM</p>
+                <!-- Step 3: Arrived -->
+                <div class="flex items-center md:justify-between w-full" id="timeline-step-arrived">
+                  <div class="hidden md:block w-5/12 text-right pr-8">
+                    <p class="text-xs text-gray-500 font-mono" id="time-step-3">--</p>
+                  </div>
+                  <div class="z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-gray-300" id="dot-step-3"></div>
+                  <div class="pl-12 md:pl-8 md:w-5/12">
+                    <h4 class="font-bold text-sm text-gray-700" id="title-step-3">3. Arrived</h4>
+                    <p class="text-xs text-gray-500">Shipment has arrived and is ready for customer delivery / pickup.</p>
+                  </div>
                 </div>
-                <div class="z-10 w-6 h-6 bg-accent rounded-full shadow border-4 border-white absolute left-3 md:left-1/2 -ml-3 flex items-center justify-center"></div>
-                <div class="pl-12 md:pl-8 md:w-5/12">
-                  <h4 class="font-bold text-accent text-lg">In Transit</h4>
-                  <p class="text-sm text-gray-500">Package has departed international facility.</p>
-                </div>
-              </div>
 
-              <!-- Step 4 (Future) -->
-              <div class="flex items-center md:justify-between w-full opacity-50">
-                <div class="hidden md:block w-5/12 text-right pr-8">
-                  <p class="text-sm text-gray-400">Pending</p>
-                </div>
-                <div class="z-10 w-4 h-4 bg-gray-300 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2"></div>
-                <div class="pl-12 md:pl-8 md:w-5/12">
-                  <h4 class="font-bold text-gray-500">Arrived at Destination Country</h4>
-                </div>
               </div>
-
-              <!-- Step 5 (Future) -->
-              <div class="flex items-center md:justify-between w-full opacity-50">
-                <div class="hidden md:block w-5/12 text-right pr-8">
-                  <p class="text-sm text-gray-400">Pending</p>
-                </div>
-                <div class="z-10 w-4 h-4 bg-gray-300 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2"></div>
-                <div class="pl-12 md:pl-8 md:w-5/12">
-                  <h4 class="font-bold text-gray-500">Delivered</h4>
-                </div>
-              </div>
-
             </div>
           </div>
+
         </div>
       </div>
     </section>
@@ -266,6 +284,163 @@
       btn.addEventListener('click', () => {
         menu.classList.toggle('hidden');
       });
+    }
+
+    // ─── Real-Time Tracking Logic ───
+    let currentOrderId = '';
+    const API_BASE = 'http://localhost:5000/api';
+
+    const trackForm = document.getElementById('track-form');
+    const trackInput = document.getElementById('track-input');
+    const trackError = document.getElementById('track-error');
+    const trackResult = document.getElementById('tracking-result');
+
+    function renderOrderData(order) {
+      currentOrderId = order.orderId;
+      document.getElementById('res-order-id').textContent = order.orderId;
+      document.getElementById('res-customer-name').textContent = order.customerName || 'Valued Customer';
+      document.getElementById('res-product-name').textContent = order.productName || 'Order Items';
+      
+      const priceStr = '$' + (Number(order.totalPrice) || 0).toFixed(2);
+      document.getElementById('res-total').textContent = priceStr;
+      
+      document.getElementById('res-origin').textContent = order.originCountry || 'China';
+      document.getElementById('res-destination').textContent = order.destinationCountry || 'Iraq';
+      document.getElementById('res-delivery').textContent = order.estimatedDelivery || 'In Progress';
+      
+      const updatedDate = order.updatedAt ? new Date(order.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently';
+      document.getElementById('res-updated-at').textContent = 'Updated: ' + updatedDate;
+
+      // Status badge and styling
+      const statusBadge = document.getElementById('res-status-badge');
+      statusBadge.textContent = order.status;
+
+      // Update 3 Timeline Steps
+      const s1Dot = document.getElementById('dot-step-1');
+      const s1Title = document.getElementById('title-step-1');
+      const s2Dot = document.getElementById('dot-step-2');
+      const s2Title = document.getElementById('title-step-2');
+      const s3Dot = document.getElementById('dot-step-3');
+      const s3Title = document.getElementById('title-step-3');
+
+      // Reset
+      [s1Dot, s2Dot, s3Dot].forEach(d => {
+        d.className = 'z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-gray-300';
+      });
+      [s1Title, s2Title, s3Title].forEach(t => {
+        t.className = 'font-bold text-sm text-gray-400';
+      });
+
+      if (order.status === 'Purchased') {
+        s1Dot.className = 'z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-amber-500 animate-pulse';
+        s1Title.className = 'font-bold text-sm text-amber-700';
+      } else if (order.status === 'In Office') {
+        s1Dot.className = 'z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-emerald-500';
+        s1Title.className = 'font-bold text-sm text-gray-800';
+
+        s2Dot.className = 'z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-blue-500 animate-pulse';
+        s2Title.className = 'font-bold text-sm text-blue-700';
+      } else if (order.status === 'Arrived') {
+        s1Dot.className = 'z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-emerald-500';
+        s1Title.className = 'font-bold text-sm text-gray-800';
+
+        s2Dot.className = 'z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-emerald-500';
+        s2Title.className = 'font-bold text-sm text-gray-800';
+
+        s3Dot.className = 'z-10 w-5 h-5 rounded-full shadow border-4 border-white absolute left-4 md:left-1/2 -ml-2.5 flex items-center justify-center bg-emerald-600 animate-bounce';
+        s3Title.className = 'font-bold text-sm text-emerald-800';
+      }
+
+      trackResult.classList.remove('hidden');
+      trackError.classList.add('hidden');
+    }
+
+    async function fetchTracking(query, silent = false) {
+      if (!query) return;
+      try {
+        if (!silent) {
+          trackError.classList.add('hidden');
+        }
+        const res = await fetch(`${API_BASE}/tracking/${encodeURIComponent(query.trim())}`);
+        if (!res.ok) {
+          if (!silent) {
+            trackError.textContent = 'Order not found. Please verify your Order ID.';
+            trackError.classList.remove('hidden');
+            trackResult.classList.add('hidden');
+          }
+          return;
+        }
+        const data = await res.json();
+        renderOrderData(data);
+      } catch (err) {
+        if (!silent) {
+          trackError.textContent = 'Unable to connect to live tracking server.';
+          trackError.classList.remove('hidden');
+        }
+      }
+    }
+
+    if (trackForm) {
+      trackForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const q = trackInput.value.trim();
+        fetchTracking(q, false);
+      });
+    }
+
+    // Connect to Server-Sent Events for Real-Time Instant Live Updates
+    function connectRealtimeSSE() {
+      try {
+        const es = new EventSource(`${API_BASE}/tracking/events`);
+        es.onmessage = (event) => {
+          try {
+            const evData = JSON.parse(event.data);
+            if (currentOrderId && evData && (
+              evData.orderId === currentOrderId || 
+              (evData.order && evData.order.orderId === currentOrderId)
+            )) {
+              // Instant silent refresh
+              fetchTracking(currentOrderId, true);
+            }
+          } catch (e) {}
+        };
+        es.onerror = () => {
+          es.close();
+          setTimeout(connectRealtimeSSE, 4000);
+        };
+      } catch (e) {
+        setTimeout(connectRealtimeSSE, 5000);
+      }
+    }
+    connectRealtimeSSE();
+
+    // Listen to cross-tab BroadcastChannel for instantaneous updates
+    try {
+      if ('BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('order_center_realtime_channel');
+        bc.onmessage = (msg) => {
+          if (currentOrderId && msg.data) {
+            if (msg.data.orderId === currentOrderId || (msg.data.order && msg.data.order.orderId === currentOrderId)) {
+              fetchTracking(currentOrderId, true);
+            }
+          }
+        };
+      }
+    } catch (e) {}
+
+    // Polling fallback every 4s for active order
+    setInterval(() => {
+      if (currentOrderId) {
+        fetchTracking(currentOrderId, true);
+      }
+    }, 4000);
+
+    // Initial check from URL parameter (e.g. tracking.html?id=HB-2026-00001 or ?q=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialQuery = urlParams.get('id') || urlParams.get('q');
+    if (initialQuery) {
+      trackInput.value = initialQuery;
+      fetchTracking(initialQuery, false);
     }
   </script>
 </body>

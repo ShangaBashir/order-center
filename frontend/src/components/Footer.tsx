@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin } from 'lucide-react';
+import { Phone, Mail, MapPin, Github } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 const Footer: React.FC = () => {
@@ -47,6 +47,7 @@ const Footer: React.FC = () => {
             <p className="text-white/50 text-sm leading-relaxed mb-6">
               {t('footer.desc')}
             </p>
+
           </div>
 
           {/* Company Links */}
@@ -150,10 +151,19 @@ const Footer: React.FC = () => {
 
       {/* Bottom Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-        <div className="flex items-center justify-center">
-          <p className="text-sm text-white/30 text-center">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
+          <p className="text-center sm:text-left">
             © {currentYear} OrderCenter. {t('footer.rights')}
           </p>
+          <a
+            href="https://github.com/ShangaBashir/order-center"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 hover:text-gold transition text-white/60 hover:underline"
+          >
+            <Github className="w-3.5 h-3.5" />
+            <span>GitHub Repository</span>
+          </a>
         </div>
       </div>
     </footer>

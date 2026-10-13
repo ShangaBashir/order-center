@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  CheckCircle2, Clock, PackageCheck, ShoppingBag, Box, Truck, Plane, MapPin, Navigation, Home, XCircle
+  CheckCircle2, ShoppingBag, Building2
 } from 'lucide-react';
 import { OrderStatus, StatusHistoryItem } from '../types';
 
@@ -11,15 +11,9 @@ interface StatusTimelineProps {
 }
 
 const ORDER_TIMELINE_STEPS: { status: OrderStatus; label: string; icon: React.ElementType }[] = [
-  { status: 'Order Received', label: 'Order Received', icon: Clock },
-  { status: 'Order Confirmed', label: 'Order Confirmed', icon: PackageCheck },
   { status: 'Purchased', label: 'Purchased', icon: ShoppingBag },
-  { status: 'Preparing', label: 'Preparing', icon: Box },
-  { status: 'Shipped', label: 'Shipped', icon: Plane },
-  { status: 'In Transit', label: 'In Transit', icon: Truck },
-  { status: 'Arrived', label: 'Arrived', icon: MapPin },
-  { status: 'Out for Delivery', label: 'Out for Delivery', icon: Navigation },
-  { status: 'Delivered', label: 'Delivered', icon: Home },
+  { status: 'In Office', label: 'In Office', icon: Building2 },
+  { status: 'Arrived', label: 'Arrived', icon: CheckCircle2 },
 ];
 
 export const StatusTimeline: React.FC<StatusTimelineProps> = ({
@@ -27,7 +21,6 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({
   statusHistory = [],
   showNotes = true
 }) => {
-  const isCancelled = currentStatus === 'Cancelled';
   const currentIndex = ORDER_TIMELINE_STEPS.findIndex(s => s.status === currentStatus);
 
   // Map history logs by status for timestamp/note lookup
@@ -54,22 +47,12 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({
 
   return (
     <div className="w-full py-4">
-      {/* If Cancelled */}
-      {isCancelled && (
-        <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200 flex items-center gap-3 text-red-700">
-          <XCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-          <div>
-            <div className="font-bold text-sm uppercase tracking-wide">Order Cancelled</div>
-            <div className="text-xs text-red-600">This order has been cancelled by the administrator.</div>
-          </div>
-        </div>
-      )}
 
       {/* Vertical / Horizontal Timeline */}
       <div className="relative pl-6 space-y-6 border-l-2 border-slate-200">
         {ORDER_TIMELINE_STEPS.map((step, index) => {
-          const isCompleted = !isCancelled && (index < currentIndex || currentStatus === 'Delivered');
-          const isCurrent = !isCancelled && index === currentIndex;
+          const isCompleted = index < currentIndex || (currentStatus === 'Arrived' && index === currentIndex);
+          const isCurrent = index === currentIndex && currentStatus !== 'Arrived';
           const historyEntry = historyMap.get(step.status);
           const IconComponent = step.icon;
 

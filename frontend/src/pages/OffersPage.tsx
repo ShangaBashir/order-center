@@ -166,7 +166,6 @@ const OffersPage: React.FC = () => {
           {/* Featured large cards */}
           <div className="grid lg:grid-cols-2 gap-6 mb-8">
             {OFFERS.filter(o => o.featured).map((offer, i) => {
-              const Icon = offer.icon;
               return (
                 <FadeSection key={offer.id} delay={i * 100}>
                   <div className={`relative rounded-sm overflow-hidden offer-card-shine bg-gradient-to-br ${offer.color} p-8 h-full group`}>
