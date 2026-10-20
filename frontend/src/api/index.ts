@@ -251,6 +251,16 @@ export const orderApi = {
     }
   },
 
+  // Add an order to the logged-in account with its Order ID (or tracking number)
+  async claimOrder(orderId: string): Promise<{ message: string; order: AdminOrder }> {
+    try {
+      const res = await api.post('/orders/claim', { orderId });
+      return res.data;
+    } catch (err) {
+      throw apiError(err, 'Could not add this order');
+    }
+  },
+
   // Get Single Order
   async getOrder(orderId: string): Promise<AdminOrder> {
     try {

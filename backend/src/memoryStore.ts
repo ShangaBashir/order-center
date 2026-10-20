@@ -47,6 +47,7 @@ export interface UserData {
   role: 'user' | 'admin' | 'customer';
   isCustomer?: boolean;
   customerId?: string;
+  claimedOrders?: string[];
   createdAt: string;
 }
 
@@ -471,6 +472,15 @@ class MemoryStore {
     };
     this.users.push(newUser);
     return newUser;
+  }
+
+  public addClaimedOrder(email: string, orderId: string): UserData | null {
+    const user = this.findUserByEmail(email);
+    if (!user) return null;
+    const claimed = user.claimedOrders || [];
+    if (!claimed.includes(orderId)) claimed.push(orderId);
+    user.claimedOrders = claimed;
+    return user;
   }
 }
 
