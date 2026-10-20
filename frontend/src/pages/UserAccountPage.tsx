@@ -14,7 +14,7 @@ import { LogoutModal } from '../components/LogoutModal';
 import { useRealtimeOrders } from '../utils/realtime';
 
 export const UserAccountPage: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, loading } = useAuth();
   const { formatPriceWithIqd } = useSettings();
   const navigate = useNavigate();
 
@@ -23,36 +23,20 @@ export const UserAccountPage: React.FC = () => {
   const [copiedId, setCopiedId] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Redirect if not logged in
+  // Redirect if not logged in (wait until the saved login has been read, or a page refresh logs you out)
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!loading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, navigate]);
 
   // Load user orders (silent reload prevents loading spinner flickers)
   const fetchUserOrders = useCallback(async (silent = false) => {
     if (!user) return;
     try {
       if (!silent) setLoadingOrders(true);
-      const allOrders = await orderApi.getOrders();
-      
-      // Match orders by phone, email, customer name, or customerId
-      const userPhoneClean = (user.phone || '').replace(/\D/g, '');
-      const userEmailClean = (user.email || '').toLowerCase().trim();
-      const userNameClean = (user.name || '').toLowerCase().trim();
-
-      const userOrders = allOrders.filter(ord => {
-        const ordPhoneClean = (ord.phone || '').replace(/\D/g, '');
-        const ordEmailClean = (ord.email || '').toLowerCase().trim();
-        const ordNameClean = (ord.customerName || '').toLowerCase().trim();
-
-        const matchesPhone = userPhoneClean && ordPhoneClean && ordPhoneClean.includes(userPhoneClean);
-        const matchesEmail = userEmailClean && ordEmailClean && ordEmailClean === userEmailClean;
-        const matchesName = userNameClean && ordNameClean && ordNameClean.includes(userNameClean);
-
-        return matchesPhone || matchesEmail || matchesName;
-      });
+      // The server returns only this customer's own orders
+      const userOrders = await orderApi.getMyOrders();
 
       setOrders(userOrders);
     } catch (err) {

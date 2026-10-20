@@ -10,7 +10,7 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = 'Dashboard' }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   if (loading) {
@@ -24,7 +24,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = 'Das
     );
   }
 
-  if (!isAuthenticated) {
+  // Customer accounts can't open the admin dashboard
+  if (!isAuthenticated || user?.role !== 'admin') {
     return <Navigate to="/admin/login" replace />;
   }
 

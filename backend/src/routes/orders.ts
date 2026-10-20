@@ -1,12 +1,24 @@
 import { Router, Response } from 'express';
 import mongoose from 'mongoose';
 import Order from '../models/Order';
-import { authMiddleware, AuthRequest } from '../middleware/auth';
+import User from '../models/User';
+import { authMiddleware, adminOnly, AuthRequest } from '../middleware/auth';
 import { memoryStore } from '../memoryStore';
 import { realtimeHub } from '../realtime';
 
 const router = Router();
 const isDbConnected = () => mongoose.connection.readyState === 1;
+
+// Match an order by its Order ID, or by its database _id when the value is a valid ObjectId
+// (passing a non-ObjectId string as _id makes MongoDB reject the whole query).
+const orderIdFilter = (rawId: string) => {
+  const clauses: any[] = [{ orderId: rawId }];
+  if (mongoose.Types.ObjectId.isValid(rawId)) clauses.push({ _id: rawId });
+  return { $or: clauses };
+};
+
+// Last 10 digits, so 0770..., 964770... and +964 770... compare equal
+const phoneKey = (phone?: string) => (phone || '').replace(/\D/g, '').slice(-10);
 
 // Helper to generate unique random Order ID (e.g. ORD-9X7K2M4P)
 async function generateUniqueOrderId(): Promise<string> {
@@ -37,7 +49,7 @@ async function generateUniqueOrderId(): Promise<string> {
 
   return candidateId;
 }// GET /api/orders/next-id - Preview next auto-assigned Order ID
-router.get('/next-id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/next-id', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const orderId = await generateUniqueOrderId();
     res.json({ orderId });
@@ -47,7 +59,7 @@ router.get('/next-id', authMiddleware, async (req: AuthRequest, res: Response) =
 });
 
 // 1. POST /api/orders (Create Order)
-router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const {
       customerName,
@@ -181,18 +193,10 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 // 2. GET /api/orders (Get All Orders)
-router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
-    let dbOrders: any[] = [];
     if (isDbConnected()) {
-      try {
-        dbOrders = await Order.find().sort({ createdAt: -1 }).lean();
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    if (dbOrders && dbOrders.length > 0) {
+      const dbOrders = await Order.find().sort({ createdAt: -1 }).lean();
       return res.json(dbOrders);
     }
 
@@ -203,8 +207,39 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/orders/mine - Orders belonging to the logged-in customer (matched by account email or phone)
+router.get('/mine', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const email = (req.user?.email || '').trim().toLowerCase();
+    let phone = '';
+    try {
+      if (isDbConnected() && req.user?.id && mongoose.Types.ObjectId.isValid(req.user.id)) {
+        const account: any = await User.findById(req.user.id).lean();
+        phone = account?.phone || '';
+      }
+    } catch (e) {}
+    if (!phone && email) {
+      phone = memoryStore.findUserByEmail(email)?.phone || '';
+    }
+    const userPhone = phoneKey(phone);
+
+    const allOrders: any[] = isDbConnected()
+      ? await Order.find().sort({ createdAt: -1 }).lean()
+      : memoryStore.getAllOrders();
+
+    const mine = allOrders.filter(o =>
+      (email && (o.email || '').trim().toLowerCase() === email) ||
+      (userPhone.length >= 7 && phoneKey(o.phone) === userPhone)
+    );
+
+    return res.json(mine);
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Server error retrieving your orders.' });
+  }
+});
+
 // 3. GET /api/orders/:orderId (Get Single Order)
-router.get('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
     let order: any = null;
@@ -221,7 +256,7 @@ router.get('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
       order = await Order.findOne({ $or: orClauses }).lean();
     } catch (e) {}
 
-    if (!order) {
+    if (!order && !isDbConnected()) {
       order = memoryStore.findOrder(rawId);
     }
 
@@ -236,7 +271,7 @@ router.get('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
 });
 
 // 4. PUT /api/orders/:orderId (Update Order Details)
-router.put('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
     const updates = req.body;
@@ -268,7 +303,7 @@ router.put('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
     try {
       const updateDoc: any = { $set: updates };
       if (updates.status) {
-        const existingOrder = await Order.findOne({ $or: [{ orderId: rawId }, { _id: rawId }] });
+        const existingOrder = await Order.findOne(orderIdFilter(rawId));
         if (existingOrder && existingOrder.status !== updates.status) {
           updateDoc.$push = {
             statusHistory: {
@@ -280,19 +315,19 @@ router.put('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
         }
       }
       updatedOrder = await Order.findOneAndUpdate(
-        { $or: [{ orderId: rawId }, { _id: rawId }] },
+        orderIdFilter(rawId),
         updateDoc,
         { new: true }
       ).lean();
     } catch (e) {}
 
     const memOrder = memoryStore.updateOrder(rawId, updates);
+    const finalUpdated = isDbConnected() ? updatedOrder : memOrder;
 
-    if (!updatedOrder && !memOrder) {
+    if (!finalUpdated) {
       return res.status(404).json({ message: 'Order not found.' });
     }
 
-    const finalUpdated = updatedOrder || memOrder;
     realtimeHub.broadcast({
       type: 'ORDER_UPDATED',
       orderId: finalUpdated.orderId || rawId,
@@ -311,7 +346,7 @@ router.put('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
 });
 
 // 5. PUT /api/orders/:orderId/status (Update Order Status)
-router.put('/:orderId/status', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/:orderId/status', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
     const { status, note } = req.body;
@@ -326,7 +361,7 @@ router.put('/:orderId/status', authMiddleware, async (req: AuthRequest, res: Res
     let dbOrder: any = null;
     try {
       dbOrder = await Order.findOneAndUpdate(
-        { $or: [{ orderId: rawId }, { _id: rawId }] },
+        orderIdFilter(rawId),
         {
           $set: { status },
           $push: { statusHistory: historyItem }
@@ -336,12 +371,12 @@ router.put('/:orderId/status', authMiddleware, async (req: AuthRequest, res: Res
     } catch (e) {}
 
     const memOrder = memoryStore.updateOrderStatus(rawId, status, note);
+    const finalStatusOrder = isDbConnected() ? dbOrder : memOrder;
 
-    if (!dbOrder && !memOrder) {
+    if (!finalStatusOrder) {
       return res.status(404).json({ message: 'Order not found.' });
     }
 
-    const finalStatusOrder = dbOrder || memOrder;
     realtimeHub.broadcast({
       type: 'ORDER_STATUS_UPDATED',
       orderId: finalStatusOrder.orderId || rawId,
@@ -360,12 +395,12 @@ router.put('/:orderId/status', authMiddleware, async (req: AuthRequest, res: Res
 });
 
 // 6. DELETE /api/orders/:orderId (Delete Order)
-router.delete('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
 
     try {
-      await Order.deleteOne({ $or: [{ orderId: rawId }, { _id: rawId }] });
+      await Order.deleteOne(orderIdFilter(rawId));
     } catch (e) {}
 
     memoryStore.deleteOrder(rawId);

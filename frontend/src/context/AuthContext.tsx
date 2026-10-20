@@ -6,7 +6,7 @@ interface AuthContextType {
   user: AdminUser | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<AdminUser>;
   register: (data: {
     name: string;
     email: string;
@@ -47,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(data.user);
     localStorage.setItem('ordercenter_admin_token', data.token);
     localStorage.setItem('ordercenter_admin_user', JSON.stringify(data.user));
+    return data.user;
   };
 
   const register = async (data: {

@@ -2,11 +2,19 @@ import { Router, Response } from 'express';
 import mongoose from 'mongoose';
 import Customer from '../models/Customer';
 import Order from '../models/Order';
-import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { adminOnly, AuthRequest } from '../middleware/auth';
 import { memoryStore } from '../memoryStore';
 
 const router = Router();
 const isDbConnected = () => mongoose.connection.readyState === 1;
+
+// Match a customer by Customer ID, or by database _id when the value is a valid ObjectId
+// (a non-ObjectId string as _id makes MongoDB reject the whole query, so nothing was updated or deleted).
+const customerIdFilter = (id: string) => {
+  const clauses: any[] = [{ customerId: id }];
+  if (mongoose.Types.ObjectId.isValid(id)) clauses.push({ _id: id });
+  return { $or: clauses };
+};
 
 // Helper to generate unique Customer ID with distinct 4-letter prefix and 4 digits
 async function generateUniqueCustomerId(name?: string): Promise<string> {
@@ -14,22 +22,12 @@ async function generateUniqueCustomerId(name?: string): Promise<string> {
 }
 
 // 1. GET /api/customers - List all customers with aggregate order stats
-router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
-    let customersList: any[] = [];
-    if (isDbConnected()) {
-      try {
-        customersList = await Customer.find().sort({ createdAt: -1 }).lean();
-      } catch (e) {
-        customersList = memoryStore.getAllCustomers();
-      }
-    } else {
-      customersList = memoryStore.getAllCustomers();
-    }
-
-    if (!customersList || customersList.length === 0) {
-      customersList = memoryStore.getAllCustomers();
-    }
+    // The database is the source of truth when connected; demo data only when it is offline
+    let customersList: any[] = isDbConnected()
+      ? await Customer.find().sort({ createdAt: -1 }).lean()
+      : memoryStore.getAllCustomers();
 
     // Deduplicate by customerId / _id
     const seenCust = new Set<string>();
@@ -41,19 +39,9 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
 
     // Fetch order statistics
-    let ordersList: any[] = [];
-    if (isDbConnected()) {
-      try {
-        ordersList = await Order.find().lean();
-      } catch (e) {
-        ordersList = memoryStore.getAllOrders();
-      }
-    } else {
-      ordersList = memoryStore.getAllOrders();
-    }
-    if (!ordersList || ordersList.length === 0) {
-      ordersList = memoryStore.getAllOrders();
-    }
+    const ordersList: any[] = isDbConnected()
+      ? await Order.find().lean()
+      : memoryStore.getAllOrders();
 
     // Calculate total orders and total spent for each customer
     const result = customersList.map(cust => {
@@ -78,7 +66,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 // 2. POST /api/customers - Create new customer
-router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const { name, phone, secondaryPhone, email, address, notes } = req.body;
 
@@ -141,7 +129,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 // 3. PUT /api/customers/:id - Update customer details
-router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/:id', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, phone, secondaryPhone, email, address, notes } = req.body;
@@ -155,7 +143,7 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     let updatedCust: any = null;
     try {
       updatedCust = await Customer.findOneAndUpdate(
-        { $or: [{ _id: id }, { customerId: id }] },
+        customerIdFilter(id),
         { name, phone, secondaryPhone: secondaryPhone || '', email, address, notes },
         { new: true }
       ).lean();
@@ -164,7 +152,7 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     }
 
     const memUpdated = memoryStore.updateCustomer(id, { name, phone, secondaryPhone: secondaryPhone || '', email, address, notes });
-    if (!updatedCust) updatedCust = memUpdated;
+    if (!isDbConnected()) updatedCust = memUpdated;
 
     if (!updatedCust) {
       return res.status(404).json({ message: 'Customer not found' });
@@ -177,11 +165,11 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 // 4. DELETE /api/customers/:id
-router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/:id', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     try {
-      await Customer.findOneAndDelete({ $or: [{ _id: id }, { customerId: id }] });
+      await Customer.findOneAndDelete(customerIdFilter(id));
     } catch (e) {
       // ignore
     }
