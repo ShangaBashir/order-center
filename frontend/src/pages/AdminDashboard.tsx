@@ -9,7 +9,7 @@ import { orderApi } from '../api';
 import { AdminOrder, OrderStatus, ALL_ORDER_STATUSES } from '../types';
 import { OrderDetailsModal } from '../components/OrderDetailsModal';
 import { EditOrderModal } from '../components/EditOrderModal';
-import { formatDisplayDate } from '../utils/formatters';
+import { formatDisplayDate, formatDateTime } from '../utils/formatters';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -244,9 +244,14 @@ export const AdminDashboard: React.FC = () => {
                         {ord.productName}
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${getStatusBadge(ord.status)}`}>
-                          {ord.status}
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border w-fit ${getStatusBadge(ord.status)}`}>
+                            {ord.status}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {formatDateTime(ord.updatedAt || ord.createdAt)}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-700">
                         {formatDisplayDate(ord.estimatedDelivery)}

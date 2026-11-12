@@ -4,6 +4,7 @@ import { AdminLayout } from '../components/AdminLayout';
 import { orderApi } from '../api';
 import { AdminOrder } from '../types';
 import { StatusTimeline } from '../components/StatusTimeline';
+import { formatDateTime } from '../utils/formatters';
 
 export const AdminTracking: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -95,7 +96,8 @@ export const AdminTracking: React.FC = () => {
               </div>
               <div className="text-right">
                 <span className="text-xs text-white/70 block">Current Status</span>
-                <span className="text-sm font-bold bg-white/10 px-2.5 py-1 rounded inline-block mt-0.5">{order.status}</span>
+                <span className="text-sm font-bold bg-white/10 px-2.5 py-1 rounded inline-block mt-0.5 border border-white/20">{order.status}</span>
+                <span className="text-[10px] text-white/70 block mt-1 font-mono">Updated: {formatDateTime(order.updatedAt || order.createdAt)}</span>
               </div>
             </div>
 
@@ -109,7 +111,7 @@ export const AdminTracking: React.FC = () => {
 
             <div className="p-6">
               <h4 className="text-xs font-bold text-[#711612] uppercase tracking-wider mb-4">Complete Status History Timeline</h4>
-              <StatusTimeline currentStatus={order.status} statusHistory={order.statusHistory} showNotes={true} />
+              <StatusTimeline currentStatus={order.status} statusHistory={order.statusHistory} showNotes={true} estimatedDelivery={order.estimatedDelivery} createdAt={order.createdAt} />
             </div>
           </div>
         )}

@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Bashir",
+    "email": "shanga.bashir22@gmail.com",
+    "password": "$2a$10$2I92asP/257fSN/anmZPounJHstv0LWArd5YQfdMkyHyanFZ18FHa",
+    "phone": "07501445566",
+    "role": "user",
+    "isCustomer": false,
+    "customerId": "",
+    "_id": "user_bashir_01",
+    "createdAt": "2026-11-12T12:00:00.000Z"
+  },
+  {
+    "name": "hawrisha",
+    "email": "hawrisha@gmail.com",
+    "password": "$2a$10$Tl5/0qLUOP2M2Vmnd6VaQ.NDdl5hcrTqHnEH.YsFgjUA7mqCW206W",
+    "phone": "2222 222 2222",
+    "role": "user",
+    "isCustomer": false,
+    "customerId": "",
+    "_id": "user_1794492977787_xypa",
+    "createdAt": "2026-11-12T14:16:17.787Z"
+  }
+]

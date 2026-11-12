@@ -1,0 +1,57 @@
+[
+  {
+    "_id": "cust_1",
+    "customerId": "SNGB-7492",
+    "name": "Shanga Bashir",
+    "phone": "07701566233",
+    "email": "shanga@example.com",
+    "address": "Salim Street, Sulaimanyiah, Kurdistan Region, Iraq",
+    "notes": "VIP Customer",
+    "createdAt": "2026-09-20T10:00:00Z",
+    "updatedAt": "2026-09-20T10:00:00Z"
+  },
+  {
+    "_id": "cust_2",
+    "customerId": "MDKR-4183",
+    "name": "Amed Karzan",
+    "phone": "07511946651",
+    "email": "amed.k@example.com",
+    "address": "Piramagrun, Sulaimanyiah, Iraq",
+    "notes": "",
+    "createdAt": "2026-09-18T09:00:00Z",
+    "updatedAt": "2026-09-18T09:00:00Z"
+  },
+  {
+    "_id": "cust_3",
+    "customerId": "SRNM-9315",
+    "name": "Soran Mustafa",
+    "phone": "07709876543",
+    "email": "soran@example.com",
+    "address": "Bakrajo, Sulaimanyiah, Iraq",
+    "notes": "",
+    "createdAt": "2026-09-15T12:00:00Z",
+    "updatedAt": "2026-09-15T12:00:00Z"
+  },
+  {
+    "_id": "cust_4",
+    "customerId": "DYRH-6824",
+    "name": "Diyar Hawrami",
+    "phone": "07504445566",
+    "email": "diyar@example.com",
+    "address": "Raniya, Kurdistan Region, Iraq",
+    "notes": "",
+    "createdAt": "2026-09-24T14:00:00Z",
+    "updatedAt": "2026-09-24T14:00:00Z"
+  },
+  {
+    "_id": "cust_5",
+    "customerId": "LNLA-5291",
+    "name": "Lina Ali",
+    "phone": "07712223344",
+    "email": "lina@example.com",
+    "address": "Tavga Street, Sulaimanyiah, Iraq",
+    "notes": "",
+    "createdAt": "2026-09-22T08:00:00Z",
+    "updatedAt": "2026-09-22T08:00:00Z"
+  }
+]

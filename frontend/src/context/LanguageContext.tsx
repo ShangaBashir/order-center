@@ -15,6 +15,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.about': 'About',
     'nav.services': 'Services',
     'nav.offers': 'Offers',
+    'nav.products': 'Products',
     'nav.contact': 'Contact',
 
     // Hero
@@ -99,6 +100,8 @@ const translations: Record<Language, Record<string, string>> = {
     'contact.product.desc': 'Send us the product link and we\'ll help you bring it to you.',
     'contact.hours': 'Business Hours',
     'contact.hours.desc': 'Mon–Sat: 9:00 AM – 8:00 PM',
+    'contact.hotline': 'Direct Customer Care',
+    'contact.phoneCall': 'Call or Email Our Team',
 
     // Tracking
     'tracking.title': 'Track Your Order',
@@ -142,6 +145,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.about': 'دەربارەی ئێمە',
     'nav.services': 'خزمەتگوزاریەکان',
     'nav.offers': 'پێشکەشکراوەکان',
+    'nav.products': 'بەرهەمەکان',
     'nav.contact': 'پەیوەندی',
 
     'hero.headline': 'کاڵا بکڕە لە وێبسایتە جیهانییەکان.',
@@ -217,6 +221,8 @@ const translations: Record<Language, Record<string, string>> = {
     'contact.product.desc': 'لینکی کاڵاکە بنێرە و ئێمە یاریدەدەین بیهێنیتەوە.',
     'contact.hours': 'کاتی کاری',
     'contact.hours.desc': 'دووشەممە-شەممە: ٩:٠٠ بەیانی – ٨:٠٠ ئێوارە',
+    'contact.hotline': 'خزمەتگوزاری ڕاستەوخۆ',
+    'contact.phoneCall': 'پەیوەندی تەلەفۆنی و ئیمەیڵ',
 
     'tracking.title': 'داواکاریەکەت شوێن بکەوە',
     'tracking.placeholder': 'ژمارەی داواکاری یان شوێنکەوتنەکەت بنووسە',
@@ -256,6 +262,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.about': 'من نحن',
     'nav.services': 'خدماتنا',
     'nav.offers': 'العروض',
+    'nav.products': 'المنتجات',
     'nav.contact': 'تواصل معنا',
 
     'hero.headline': 'تسوّق من المواقع العالمية.',
@@ -331,6 +338,8 @@ const translations: Record<Language, Record<string, string>> = {
     'contact.product.desc': 'أرسل لنا رابط المنتج وسنساعدك على إحضاره.',
     'contact.hours': 'ساعات العمل',
     'contact.hours.desc': 'الاثنين – السبت: 9:00 ص – 8:00 م',
+    'contact.hotline': 'خدمة العملاء المباشرة',
+    'contact.phoneCall': 'الاتصال الهاتفي والبريد الإلكتروني',
 
     'tracking.title': 'تتبع طلبك',
     'tracking.placeholder': 'أدخل رقم الطلب أو رقم التتبع',

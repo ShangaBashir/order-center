@@ -4,8 +4,9 @@ import {
   PlusCircle, CheckCircle2, Copy, RefreshCw, User, Package, Truck, ArrowLeft, UserCheck, Hash
 } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
+import { ProductPhotoInput } from '../components/ProductPhotoInput';
 import { orderApi, customerApi } from '../api';
-import { Customer, OrderStatus, ALL_ORDER_STATUSES } from '../types';
+import { Customer, OrderStatus } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { formatPhoneNumber } from '../utils/formatters';
 
@@ -38,6 +39,7 @@ export const AdminAddOrder: React.FC = () => {
     shippingMethod: '',
     trackingNumber: '',
     estimatedDelivery: '',
+    approximateDeliveryDate: '',
 
     status: 'Purchased' as OrderStatus,
     notes: '',
@@ -121,6 +123,10 @@ export const AdminAddOrder: React.FC = () => {
       setErrorMsg('Product Link / URL is required and cannot be empty.');
       return;
     }
+    if (!formData.productImage?.trim()) {
+      setErrorMsg('Product Photo is required. Please provide a photo either by Link or by Upload.');
+      return;
+    }
     if (Number(formData.quantity) <= 0) {
       setErrorMsg('Please enter a valid Quantity (must be greater than 0).');
       return;
@@ -142,7 +148,7 @@ export const AdminAddOrder: React.FC = () => {
         productPrice: formData.productCurrency === 'IQD' ? rawProdPrice / usdToIqdRate : rawProdPrice,
         shippingFee: formData.shippingCurrency === 'IQD' ? rawShipFee / usdToIqdRate : rawShipFee,
         currency: 'USD',
-        productImage: ''
+        productImage: formData.productImage?.trim() || ''
       };
       const res = await orderApi.createOrder(payload);
       setCreatedResult({
@@ -224,7 +230,10 @@ export const AdminAddOrder: React.FC = () => {
 
             <div className="flex justify-end gap-3 pt-2">
               <button
-                onClick={() => setCreatedResult(null)}
+                onClick={() => {
+                setCreatedResult(null);
+                setFormData(prev => ({ ...prev, productImage: '', productName: '', productUrl: '', quantity: 0, productPrice: 0, shippingFee: 0 }));
+              }}
                 className="px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 rounded-md"
               >
                 Create Another Order
@@ -374,6 +383,12 @@ export const AdminAddOrder: React.FC = () => {
                     className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] shadow-sm"
                   />
                 </div>
+
+                {/* Product Photo with 2 options: By Link and By Upload */}
+                <ProductPhotoInput
+                  value={formData.productImage}
+                  onChange={(productImage) => setFormData({ ...formData, productImage })}
+                />
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Quantity *</label>
@@ -533,15 +548,35 @@ export const AdminAddOrder: React.FC = () => {
                 </div>
 
                 <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Approximate Close Date to Get Order
+                    <span className="text-[10px] text-slate-400 font-normal ml-1">(Target Close Date)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.approximateDeliveryDate}
+                    onChange={e => setFormData({ ...formData, approximateDeliveryDate: e.target.value })}
+                    className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] shadow-sm bg-white font-medium text-slate-800"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Initial Order Status</label>
                   <select
                     value={formData.status}
                     onChange={e => setFormData({ ...formData, status: e.target.value as OrderStatus })}
-                    className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] bg-white shadow-sm font-medium"
+                    className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] bg-white shadow-sm font-medium text-slate-800"
                   >
-                    {ALL_ORDER_STATUSES.map(st => (
-                      <option key={st} value={st}>{st}</option>
-                    ))}
+                    <optgroup label="── In-Progress Milestones ──">
+                      <option value="Purchased">1. Purchased</option>
+                      <option value="Received in Warehouse">2. Received in Warehouse</option>
+                      <option value="Dispatched from Warehouse">3. Dispatched from Warehouse</option>
+                      <option value="Arrived">4. Arrived</option>
+                    </optgroup>
+                    <optgroup label="── Final Resolutions ──">
+                      <option value="Done">5. Done (Completed & Delivered)</option>
+                      <option value="Canceled">5. Canceled (Order Canceled)</option>
+                    </optgroup>
                   </select>
                 </div>
 

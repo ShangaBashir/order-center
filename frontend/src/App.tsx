@@ -7,9 +7,11 @@ import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import OffersPage from './pages/OffersPage';
 import ContactPage from './pages/ContactPage';
+import ProductsPage from './pages/ProductsPage';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { NavigationGuardProvider } from './context/NavigationGuardContext';
 
 // Admin & Tracking pages
 import { AdminLogin } from './pages/AdminLogin';
@@ -20,6 +22,7 @@ import { AdminTracking } from './pages/AdminTracking';
 import { AdminCustomers } from './pages/AdminCustomers';
 import { AddCustomerPage } from './pages/AddCustomerPage';
 import { AdminSettings } from './pages/AdminSettings';
+import { AdminWebsiteContent } from './pages/AdminWebsiteContent';
 import { PublicTrackingPage } from './pages/PublicTrackingPage';
 
 import { CustomerAuthPage } from './pages/CustomerAuthPage';
@@ -53,6 +56,8 @@ function MainLayout() {
           <Route path="/admin/tracking" element={<AdminTracking />} />
           <Route path="/admin/customers" element={<AdminCustomers />} />
           <Route path="/admin/add-customer" element={<AddCustomerPage />} />
+          <Route path="/admin/website" element={<AdminWebsiteContent />} />
+          <Route path="/admin/website-content" element={<AdminWebsiteContent />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
 
           {/* Public Customer Tracking Route */}
@@ -75,6 +80,7 @@ function MainLayout() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/offers" element={<OffersPage />} />
+          <Route path="/products" element={<ProductsPage />} />
           <Route path="/contact" element={<ContactPage />} />
 
           {/* Customer Auth & Account Routes */}
@@ -99,7 +105,9 @@ function App() {
     <AuthProvider>
       <SettingsProvider>
         <LanguageProvider>
-          <MainLayout />
+          <NavigationGuardProvider>
+            <MainLayout />
+          </NavigationGuardProvider>
         </LanguageProvider>
       </SettingsProvider>
     </AuthProvider>

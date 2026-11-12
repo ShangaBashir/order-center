@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['user', 'admin', 'customer'], default: 'user' },
   isCustomer: { type: Boolean, default: false },
   customerId: { type: String, default: '' },
+  resetPasswordCode: { type: String, default: '' },
+  resetPasswordExpires: { type: Date },
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);

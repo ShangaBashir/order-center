@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { Language, PublicTrackingData } from '../types';
 import { LogoutModal } from './LogoutModal';
 import { orderApi } from '../api';
-import { formatDisplayDate } from '../utils/formatters';
+import { formatDisplayDate, formatDateTime } from '../utils/formatters';
 import { StatusTimeline } from './StatusTimeline';
 
 // ─── Language Config ────────────────────────────────────────────────────────
@@ -105,6 +105,7 @@ const Header: React.FC = () => {
     { path: '/about', label: t('nav.about') },
     { path: '/services', label: t('nav.services') },
     { path: '/offers', label: t('nav.offers') },
+    { path: '/products', label: t('nav.products') },
     { path: '/contact', label: t('nav.contact') },
   ];
 
@@ -595,7 +596,7 @@ const Header: React.FC = () => {
 
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                     <p className="text-xs text-charcoal-lighter">
-                      {t('tracking.updated')}: {trackingData.updatedAt ? new Date(trackingData.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                      {t('tracking.updated')}: {trackingData.updatedAt ? formatDateTime(trackingData.updatedAt) : 'Recently'}
                     </p>
                     <Link
                       to={`/tracking?id=${encodeURIComponent(trackingData.orderId)}`}

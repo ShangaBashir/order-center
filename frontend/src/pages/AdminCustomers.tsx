@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Phone, Mail, MapPin, Search, UserPlus, Trash2, Hash, Tag, Eye, Edit3, X, Save,
   ShoppingBag, CheckCircle, ChevronLeft, ChevronRight, ExternalLink, ArrowRight, Package
@@ -15,11 +15,14 @@ const ITEMS_PER_PAGE = 10;
 
 export const AdminCustomers: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { formatPriceWithIqd } = useSettings();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get('search') || searchParams.get('customer') || searchParams.get('q') || searchParams.get('name') || ''
+  );
   const [currentPage, setCurrentPage] = useState(1);
   
   // Modals state
@@ -60,6 +63,37 @@ export const AdminCustomers: React.FC = () => {
   useEffect(() => {
     loadCustomers();
   }, []);
+
+  // Sync URL query params (e.g. when linked from orders page)
+  useEffect(() => {
+    const q = searchParams.get('search') || searchParams.get('customer') || searchParams.get('q') || searchParams.get('name') || '';
+    if (q && q !== searchQuery) {
+      setSearchQuery(q);
+    }
+
+    const cid = searchParams.get('customerId') || searchParams.get('id');
+    const cphone = searchParams.get('phone');
+
+    if (customers.length > 0) {
+      if (cid) {
+        const match = customers.find(c => c.customerId?.toLowerCase() === cid.toLowerCase() || c._id === cid);
+        if (match) setViewCustomer(match);
+      } else if (q || cphone) {
+        const cleanPhone = (cphone || '').replace(/\D/g, '');
+        const cleanName = (q || '').trim().toLowerCase();
+        const match = customers.find(c => {
+          const p1 = (c.phone || '').replace(/\D/g, '');
+          const p2 = (c.secondaryPhone || '').replace(/\D/g, '');
+          if (cleanPhone && (p1 === cleanPhone || p2 === cleanPhone || (cleanPhone.length >= 8 && (p1.endsWith(cleanPhone) || cleanPhone.endsWith(p1))))) return true;
+          if (cleanName && c.name?.toLowerCase().trim() === cleanName) return true;
+          return false;
+        });
+        if (match) {
+          setViewCustomer(match);
+        }
+      }
+    }
+  }, [searchParams, customers]);
 
   // Reset pagination on search change
   useEffect(() => {

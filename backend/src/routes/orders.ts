@@ -50,6 +50,7 @@ router.get('/next-id', authMiddleware, async (req: AuthRequest, res: Response) =
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const {
+      customerId,
       customerName,
       phone,
       email,
@@ -66,6 +67,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       shippingMethod,
       trackingNumber,
       estimatedDelivery,
+      approximateDeliveryDate,
       status
     } = req.body;
 
@@ -107,6 +109,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       try {
         const orderDoc = new Order({
           orderId,
+          customerId: customerId || '',
           customerName,
           phone,
           email: email || '',
@@ -124,6 +127,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
           shippingMethod: shippingMethod || 'Express Air',
           trackingNumber: trackingNumber || '',
           estimatedDelivery: estimatedDelivery || '',
+          approximateDeliveryDate: approximateDeliveryDate || req.body.closeDate || '',
           status: initialStatus,
           statusHistory,
           notes: req.body.notes || ''
@@ -138,6 +142,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     // Always keep memoryStore synced
     const memOrder = memoryStore.addOrder({
       orderId,
+      customerId: customerId || '',
       customerName,
       phone,
       email,
@@ -155,6 +160,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       shippingMethod,
       trackingNumber,
       estimatedDelivery,
+      approximateDeliveryDate: approximateDeliveryDate || req.body.closeDate || '',
       status: initialStatus,
       statusHistory,
       notes: req.body.notes || ''
@@ -180,24 +186,43 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// 2. GET /api/orders (Get All Orders)
+// 2. GET /api/orders (Get All Orders for Admin or Customer's Own Orders)
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    let dbOrders: any[] = [];
+    const userRole = req.user?.role;
+    const isCustomer = Boolean(req.user?.isCustomer && req.user?.customerId);
+    const customerId = (req.user?.customerId || '').trim().toUpperCase();
+
+    // Standard Users (not verified customers) have no access to orders
+    if (userRole !== 'admin' && !isCustomer) {
+      return res.json([]);
+    }
+
+    let allOrders: any[] = [];
     if (isDbConnected()) {
       try {
-        dbOrders = await Order.find().sort({ createdAt: -1 }).lean();
+        allOrders = await Order.find().sort({ createdAt: -1 }).lean();
       } catch (e) {
         // ignore
       }
     }
 
-    if (dbOrders && dbOrders.length > 0) {
-      return res.json(dbOrders);
+    if (!allOrders || allOrders.length === 0) {
+      allOrders = memoryStore.getAllOrders();
     }
 
-    const memOrders = memoryStore.getAllOrders();
-    return res.json(memOrders);
+    // Admins receive all orders
+    if (userRole === 'admin') {
+      return res.json(allOrders);
+    }
+
+    // Verified Customers receive ONLY their own orders (strictly matched by Customer ID)
+    const customerOrders = allOrders.filter((ord: any) => {
+      const ordCustId = (ord.customerId || '').trim().toUpperCase();
+      return ordCustId && ordCustId === customerId;
+    });
+
+    return res.json(customerOrders);
   } catch (err: any) {
     return res.status(500).json({ message: 'Server error retrieving orders.' });
   }
@@ -227,6 +252,19 @@ router.get('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
 
     if (!order) {
       return res.status(404).json({ message: 'Order not found.' });
+    }
+
+    // Role-based authorization: standard users cannot view orders; customers can only view their own
+    if (req.user?.role !== 'admin') {
+      const isCustomer = Boolean(req.user?.isCustomer && req.user?.customerId);
+      const customerId = (req.user?.customerId || '').trim().toUpperCase();
+      if (!isCustomer) {
+        return res.status(403).json({ message: 'Access denied. You must be a verified customer to view order details.' });
+      }
+      const ordCustId = (order.customerId || '').trim().toUpperCase();
+      if (!ordCustId || ordCustId !== customerId) {
+        return res.status(403).json({ message: 'Access denied. You can only view your own orders.' });
+      }
     }
 
     return res.json(order);

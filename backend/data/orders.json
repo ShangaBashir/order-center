@@ -1,0 +1,217 @@
+[
+  {
+    "_id": "ord_c8s9dbdt_restored",
+    "orderId": "ORD-C8S9DBDT",
+    "customerId": "SNGB-7492",
+    "customerName": "Shanga Bashir",
+    "phone": "0770 156 6233",
+    "email": "shanga.bashir22@gmail.com",
+    "address": "Salim Street, Sulaimanyiah, Kurdistan Region, Iraq",
+    "productName": "gorawy manga (updated)",
+    "productUrl": "https://shein.com/item/gorawy-manga",
+    "productImage": "https://images.unsplash.com/photo-1582966772680-860e372bb558?auto=format&fit=crop&w=400&q=80",
+    "quantity": 2,
+    "productPrice": 363.33,
+    "shippingFee": 0,
+    "totalPrice": 726.66,
+    "currency": "USD",
+    "originCountry": "China",
+    "destinationCountry": "Iraq",
+    "shippingMethod": "Express Air",
+    "trackingNumber": "OC-984210-CN",
+    "estimatedDelivery": "2026-11-15",
+    "status": "Received in Warehouse",
+    "statusHistory": [
+      {
+        "status": "Purchased",
+        "date": "2026-11-12T15:00:00.000Z",
+        "note": "Order registered in admin dashboard"
+      },
+      {
+        "status": "Received in Warehouse",
+        "date": "2026-11-12T13:39:58.153Z",
+        "note": "Status updated to Received in Warehouse"
+      }
+    ],
+    "notes": "Saved and verified edit",
+    "createdAt": "2026-11-12T15:00:00.000Z",
+    "updatedAt": "2026-11-12T13:44:37.411Z",
+    "productCurrency": "USD",
+    "shippingCurrency": "USD",
+    "approximateDeliveryDate": "2026-12-01"
+  },
+  {
+    "_id": "ord_1",
+    "orderId": "HB-2026-00001",
+    "customerName": "Shanga Bashir",
+    "phone": "07701566233",
+    "email": "shanga@example.com",
+    "address": "Bakhtiyari, Sulaimanyiah, Iraq",
+    "productName": "SHEIN Floral Summer Wrap Dress - Medium",
+    "productUrl": "https://shein.com/product/123456",
+    "productImage": "",
+    "quantity": 1,
+    "productPrice": 35,
+    "shippingFee": 8,
+    "totalPrice": 43,
+    "currency": "USD",
+    "originCountry": "China",
+    "destinationCountry": "Iraq",
+    "shippingMethod": "Express Air",
+    "trackingNumber": "OC-984210-CN",
+    "estimatedDelivery": "Nov 04, 2026",
+    "status": "Dispatched from Warehouse",
+    "statusHistory": [
+      {
+        "status": "Purchased",
+        "date": "2026-10-20T09:15:00Z",
+        "note": "Purchased from SHEIN China warehouse"
+      },
+      {
+        "status": "Received in Warehouse",
+        "date": "2026-10-23T14:30:00Z",
+        "note": "Received & inspected at international sorting hub"
+      },
+      {
+        "status": "Dispatched from Warehouse",
+        "date": "2026-10-27T16:45:00Z",
+        "note": "Dispatched on flight cargo to Sulaimanyiah"
+      }
+    ],
+    "createdAt": "2026-10-20T09:15:00Z",
+    "updatedAt": "2026-10-27T16:45:00Z"
+  },
+  {
+    "_id": "ord_2",
+    "orderId": "HB-2026-00002",
+    "customerName": "Amed Karzan",
+    "phone": "07511946651",
+    "email": "amed.k@example.com",
+    "address": "Piramagrun, Sulaimanyiah, Iraq",
+    "productName": "Amazon Echo Dot 5th Gen Smart Speaker",
+    "productUrl": "https://amazon.com/dp/B09B8V1LZ3",
+    "productImage": "",
+    "quantity": 2,
+    "productPrice": 50,
+    "shippingFee": 15,
+    "totalPrice": 115,
+    "currency": "USD",
+    "originCountry": "USA",
+    "destinationCountry": "Iraq",
+    "shippingMethod": "Express Cargo",
+    "trackingNumber": "OC-773194-US",
+    "estimatedDelivery": "Oct 28, 2026",
+    "status": "Done",
+    "statusHistory": [
+      {
+        "status": "Purchased",
+        "date": "2026-10-15T14:00:00Z",
+        "note": "Ordered from Amazon US"
+      },
+      {
+        "status": "Received in Warehouse",
+        "date": "2026-10-18T10:00:00Z",
+        "note": "Received at Delaware export facility"
+      },
+      {
+        "status": "Dispatched from Warehouse",
+        "date": "2026-10-21T08:30:00Z",
+        "note": "Departed JFK international cargo flight"
+      },
+      {
+        "status": "Arrived",
+        "date": "2026-10-26T12:00:00Z",
+        "note": "Arrived at Sulaimanyiah distribution point"
+      },
+      {
+        "status": "Done",
+        "date": "2026-10-28T16:30:00Z",
+        "note": "Package successfully delivered to customer doorstep"
+      }
+    ],
+    "createdAt": "2026-10-15T14:00:00Z",
+    "updatedAt": "2026-10-28T16:30:00Z"
+  },
+  {
+    "_id": "ord_3",
+    "orderId": "HB-2026-00003",
+    "customerName": "Soran Mustafa",
+    "phone": "07709876543",
+    "email": "soran@example.com",
+    "address": "Bakrajo, Sulaimanyiah, Iraq",
+    "productName": "Nike Air Max 270 Sneakers - Size 43",
+    "productUrl": "https://nike.com/t/air-max-270",
+    "productImage": "",
+    "quantity": 1,
+    "productPrice": 160,
+    "shippingFee": 20,
+    "totalPrice": 180,
+    "currency": "USD",
+    "originCountry": "Turkey",
+    "destinationCountry": "Iraq",
+    "shippingMethod": "Standard Air",
+    "trackingNumber": "OC-551029-TR",
+    "estimatedDelivery": "Oct 30, 2026",
+    "status": "Arrived",
+    "statusHistory": [
+      {
+        "status": "Purchased",
+        "date": "2026-10-18T10:00:00Z",
+        "note": "Purchased from Turkey"
+      },
+      {
+        "status": "Received in Warehouse",
+        "date": "2026-10-21T12:00:00Z",
+        "note": "Received in Istanbul warehouse hub"
+      },
+      {
+        "status": "Dispatched from Warehouse",
+        "date": "2026-10-24T09:30:00Z",
+        "note": "Dispatched on Turkish Airlines air freight"
+      },
+      {
+        "status": "Arrived",
+        "date": "2026-10-28T15:10:00Z",
+        "note": "Arrived at local office in Sulaimanyiah & ready for delivery"
+      }
+    ],
+    "createdAt": "2026-10-18T10:00:00Z",
+    "updatedAt": "2026-10-28T15:10:00Z"
+  },
+  {
+    "_id": "ord_5",
+    "orderId": "HB-2026-00005",
+    "customerName": "Lina Ali",
+    "phone": "07712223344",
+    "email": "lina@example.com",
+    "address": "Tavga Street, Sulaimanyiah, Iraq",
+    "productName": "Anker PowerCore 20000mAh Power Bank",
+    "productUrl": "https://anker.com/powercore",
+    "productImage": "",
+    "quantity": 2,
+    "productPrice": 40,
+    "shippingFee": 10,
+    "totalPrice": 90,
+    "currency": "USD",
+    "originCountry": "China",
+    "destinationCountry": "Iraq",
+    "shippingMethod": "Standard Cargo",
+    "trackingNumber": "OC-112233-CN",
+    "estimatedDelivery": "Nov 06, 2026",
+    "status": "Received in Warehouse",
+    "statusHistory": [
+      {
+        "status": "Purchased",
+        "date": "2026-10-24T08:00:00Z",
+        "note": "Item ordered from manufacturer"
+      },
+      {
+        "status": "Received in Warehouse",
+        "date": "2026-10-28T11:45:00Z",
+        "note": "Received at Guangzhou consolidation warehouse"
+      }
+    ],
+    "createdAt": "2026-10-24T08:00:00Z",
+    "updatedAt": "2026-10-28T11:45:00Z"
+  }
+]

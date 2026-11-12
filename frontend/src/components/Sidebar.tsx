@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, ShoppingBag, PlusCircle, Search, Users, Settings, LogOut, ShieldCheck, X
+  LayoutDashboard, ShoppingBag, PlusCircle, Search, Users, Settings, LogOut, ShieldCheck, X, Globe
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigationGuard } from '../context/NavigationGuardContext';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -13,9 +14,21 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const { canNavigate } = useNavigationGuard();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  const handleNavClick = (e: React.MouseEvent, targetPath: string) => {
+    if (!canNavigate(targetPath)) {
+      e.preventDefault();
+      return;
+    }
+    if (setMobileOpen) setMobileOpen(false);
+  };
+
   const handleLogoutClick = () => {
+    if (!canNavigate('/admin/login')) {
+      return;
+    }
     setShowLogoutModal(true);
   };
 
@@ -68,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
               key={item.path}
               to={item.path}
               end={item.exact}
-              onClick={() => setMobileOpen && setMobileOpen(false)}
+              onClick={(e) => handleNavClick(e, item.path)}
               className={({ isActive }) =>
                 `flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative ${
                   isActive
@@ -90,8 +103,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
         })}
       </nav>
 
-      {/* Bottom Footer Action */}
-      <div className="p-4 border-t border-white/10 bg-black/40 backdrop-blur-md">
+      {/* Bottom Footer Actions: Website CMS & Logout */}
+      <div className="p-4 border-t border-white/10 bg-black/40 backdrop-blur-md space-y-2">
+        <NavLink
+          to="/admin/website"
+          onClick={(e) => handleNavClick(e, '/admin/website')}
+          className={({ isActive }) =>
+            `w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${
+              isActive
+                ? 'bg-gradient-to-r from-[#711612] to-[#8B1E1A] text-white shadow-lg shadow-[#711612]/30 border-l-4 border-[#D4AF37] font-semibold'
+                : 'text-slate-300 hover:text-white hover:bg-white/10 hover:translate-x-0.5'
+            }`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              <Globe className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${
+                isActive ? 'text-[#D4AF37]' : 'text-slate-400 group-hover:text-white'
+              }`} />
+              <span>Website CMS</span>
+            </>
+          )}
+        </NavLink>
+
         <button
           onClick={handleLogoutClick}
           className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-400 hover:text-white hover:bg-red-600/80 transition-all duration-200 border border-red-500/30 hover:border-red-500 shadow-sm hover:shadow-red-900/30"

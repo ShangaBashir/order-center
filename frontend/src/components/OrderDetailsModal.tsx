@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   X, ExternalLink, Truck, User, Package, Edit, Trash2
 } from 'lucide-react';
 import { AdminOrder, OrderStatus } from '../types';
 import { StatusTimeline } from './StatusTimeline';
 import { useSettings } from '../context/SettingsContext';
-import { formatDisplayDate } from '../utils/formatters';
+import { formatDisplayDate, formatDateTime } from '../utils/formatters';
 
 import { ConfirmModal } from './ConfirmModal';
 
@@ -31,14 +32,21 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
   if (!order) return null;
 
-  const getStatusBadge = (status: OrderStatus) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Purchased':
-        return 'bg-amber-100 text-amber-800 border-amber-300';
+        return 'bg-amber-100 text-amber-900 border-amber-300';
+      case 'Received in Warehouse':
       case 'In Office':
-        return 'bg-sky-100 text-sky-800 border-sky-300';
+        return 'bg-sky-100 text-sky-900 border-sky-300';
+      case 'Dispatched from Warehouse':
+        return 'bg-[#711612]/10 text-[#711612] border-[#711612]/30 font-bold';
       case 'Arrived':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+        return 'bg-indigo-100 text-indigo-900 border-indigo-300';
+      case 'Done':
+        return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+      case 'Canceled':
+        return 'bg-red-100 text-red-900 border-red-300';
       default:
         return 'bg-slate-100 text-slate-800 border-slate-300';
     }
@@ -81,7 +89,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   {order.status}
                 </span>
               </div>
-              <p className="text-xs text-white/70">Created: {new Date(order.createdAt || '').toLocaleString()}</p>
+              <p className="text-xs text-white/70">Created: {formatDateTime(order.createdAt || '')}</p>
             </div>
           </div>
 
@@ -129,6 +137,11 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             <div>
               <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Est. Delivery</div>
               <div className="text-sm font-semibold text-slate-700 mt-0.5">{formatDisplayDate(order.estimatedDelivery)}</div>
+              {order.approximateDeliveryDate && (
+                <div className="text-[11px] text-amber-800 font-semibold mt-0.5">
+                  Close Date: {formatDisplayDate(order.approximateDeliveryDate)}
+                </div>
+              )}
             </div>
           </div>
 
@@ -136,12 +149,32 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
             {/* CUSTOMER INFORMATION */}
             <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-3">
-              <div className="flex items-center gap-2 border-b pb-2 text-[#711612] font-bold text-sm">
-                <User className="w-4 h-4" />
-                <span>CUSTOMER INFORMATION</span>
+              <div className="flex items-center justify-between border-b pb-2">
+                <div className="flex items-center gap-2 text-[#711612] font-bold text-sm">
+                  <User className="w-4 h-4" />
+                  <span>CUSTOMER INFORMATION</span>
+                </div>
+                <Link
+                  to={`/admin/customers?search=${encodeURIComponent(order.customerName)}&phone=${encodeURIComponent(order.phone || '')}`}
+                  className="text-xs text-[#711612] hover:text-[#94201C] hover:underline font-bold inline-flex items-center gap-1 transition"
+                  title="Open customer profile in Customers Directory"
+                >
+                  <span>View Customer Profile</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
               </div>
               <div className="text-sm space-y-2 text-slate-700">
-                <div><span className="font-semibold text-slate-900">Name:</span> {order.customerName}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-900">Name:</span>
+                  <Link
+                    to={`/admin/customers?search=${encodeURIComponent(order.customerName)}&phone=${encodeURIComponent(order.phone || '')}`}
+                    className="font-bold text-[#711612] hover:text-[#94201C] hover:underline inline-flex items-center gap-1 group"
+                    title={`View ${order.customerName} in Customers Directory`}
+                  >
+                    <span>{order.customerName}</span>
+                    <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                  </Link>
+                </div>
                 <div><span className="font-semibold text-slate-900">Phone:</span> {order.phone}</div>
                 <div><span className="font-semibold text-slate-900">Email:</span> {order.email || 'N/A'}</div>
                 <div><span className="font-semibold text-slate-900">Delivery Address:</span> {order.address}</div>
@@ -184,7 +217,31 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             </div>
 
             <div className="space-y-3">
-              <h4 className="font-bold text-slate-900 text-base">{order.productName}</h4>
+              <div className="flex items-start gap-4">
+                {order.productImage && (
+                  <div className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-white flex-shrink-0 shadow-xs">
+                    <img
+                      src={order.productImage}
+                      alt={order.productName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-slate-900 text-base">{order.productName}</h4>
+                  {order.productUrl && (
+                    <a
+                      href={order.productUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-[#711612] hover:underline font-semibold inline-flex items-center gap-1 mt-1"
+                    >
+                      <span>View Store Product Link</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <span className="text-slate-400 block text-[11px] font-semibold">Quantity</span>
@@ -233,6 +290,8 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               currentStatus={order.status}
               statusHistory={order.statusHistory}
               showNotes={true}
+              estimatedDelivery={order.estimatedDelivery}
+              createdAt={order.createdAt}
             />
           </div>
 

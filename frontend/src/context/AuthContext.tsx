@@ -15,6 +15,9 @@ interface AuthContextType {
     isCustomer?: boolean;
     customerId?: string;
   }) => Promise<void>;
+  linkCustomerId: (customerId: string) => Promise<{ user: AdminUser; customer: any }>;
+  unlinkCustomerId: () => Promise<void>;
+  updateCurrentUser: (user: AdminUser, token?: string) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -64,6 +67,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('ordercenter_admin_user', JSON.stringify(res.user));
   };
 
+  const updateCurrentUser = (newUser: AdminUser, newToken?: string) => {
+    setUser(newUser);
+    localStorage.setItem('ordercenter_admin_user', JSON.stringify(newUser));
+    if (newToken) {
+      setToken(newToken);
+      localStorage.setItem('ordercenter_admin_token', newToken);
+    }
+  };
+
+  const linkCustomerId = async (custId: string) => {
+    const res = await orderApi.linkCustomerId(custId);
+    setToken(res.token);
+    setUser(res.user);
+    localStorage.setItem('ordercenter_admin_token', res.token);
+    localStorage.setItem('ordercenter_admin_user', JSON.stringify(res.user));
+    return res;
+  };
+
+  const unlinkCustomerId = async () => {
+    const res = await orderApi.unlinkCustomerId();
+    setToken(res.token);
+    setUser(res.user);
+    localStorage.setItem('ordercenter_admin_token', res.token);
+    localStorage.setItem('ordercenter_admin_user', JSON.stringify(res.user));
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -79,6 +108,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!token && !!user,
         login,
         register,
+        linkCustomerId,
+        unlinkCustomerId,
+        updateCurrentUser,
         logout,
         loading
       }}

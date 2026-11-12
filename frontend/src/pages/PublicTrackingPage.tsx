@@ -8,7 +8,7 @@ import { PublicTrackingData } from '../types';
 import { StatusTimeline } from '../components/StatusTimeline';
 import { useSettings } from '../context/SettingsContext';
 import { useRealtimeTracking } from '../utils/realtime';
-import { formatDisplayDate } from '../utils/formatters';
+import { formatDisplayDate, formatDateTime } from '../utils/formatters';
 
 export const PublicTrackingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -228,7 +228,7 @@ export const PublicTrackingPage: React.FC = () => {
                   <span className="text-[10px] text-white/70 uppercase tracking-wider block">Current Status</span>
                   <span className="text-base sm:text-lg font-extrabold text-[#D4AF37] block mt-0.5">{trackingData.status}</span>
                   <span className="text-[10px] text-white/60 block mt-1">
-                    Updated: {new Date(trackingData.updatedAt || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    Updated: {formatDateTime(trackingData.updatedAt || '')}
                   </span>
                 </div>
               </div>

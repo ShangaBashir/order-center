@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, RefreshCw, User, Package, Truck } from 'lucide-react';
-import { AdminOrder, Customer, OrderStatus, ALL_ORDER_STATUSES } from '../types';
+import { Link } from 'react-router-dom';
+import { X, Save, RefreshCw, User, Package, Truck, ExternalLink } from 'lucide-react';
+import { AdminOrder, Customer, OrderStatus } from '../types';
 import { customerApi } from '../api';
 import { useSettings } from '../context/SettingsContext';
 import { formatPhoneNumber } from '../utils/formatters';
+import { ProductPhotoInput } from './ProductPhotoInput';
 
 interface EditOrderModalProps {
   order: AdminOrder | null;
@@ -52,6 +54,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
     destinationCountry: order.destinationCountry || '',
     shippingMethod: order.shippingMethod || '',
     estimatedDelivery: toDateInputValue(order.estimatedDelivery),
+    approximateDeliveryDate: toDateInputValue(order.approximateDeliveryDate),
     notes: order.notes || '',
   });
 
@@ -79,6 +82,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
         destinationCountry: order.destinationCountry || '',
         shippingMethod: order.shippingMethod || '',
         estimatedDelivery: toDateInputValue(order.estimatedDelivery),
+        approximateDeliveryDate: toDateInputValue(order.approximateDeliveryDate),
         notes: order.notes || '',
       });
     }
@@ -164,6 +168,11 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
       setSaving(false);
       return;
     }
+    if (!formData.productImage?.trim()) {
+      setError('Product Photo is required. Please provide a photo either by Link or by Upload.');
+      setSaving(false);
+      return;
+    }
     if (qty <= 0) {
       setError('Please enter a valid Quantity (must be greater than 0).');
       setSaving(false);
@@ -207,7 +216,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
       const updates: Partial<AdminOrder> = {
         ...formData,
         productUrl: formData.productUrl.trim(),
-        productImage: '',
+        productImage: formData.productImage?.trim() || '',
         productPrice: convertedProductPrice,
         shippingFee: convertedShippingFee,
         totalPrice: totalPriceUsd,
@@ -224,8 +233,14 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-fade-in">
-      <div className="relative bg-white rounded-lg shadow-2xl max-w-3xl w-full my-8 overflow-hidden border border-slate-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-fade-in"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div 
+        className="relative bg-white rounded-lg shadow-2xl max-w-3xl w-full my-8 overflow-hidden border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <div className="bg-[#711612] text-white px-6 py-4 flex items-center justify-between">
@@ -233,7 +248,14 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
             <h3 className="font-bold text-base">Edit Order Details</h3>
             <span className="text-xs text-amber-200 font-mono">Order ID: {order.orderId}</span>
           </div>
-          <button onClick={onClose} className="p-1 text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-1 text-white/80 hover:text-white"
+            title="Close editor"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
@@ -245,9 +267,22 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
 
           {/* 1. CUSTOMER INFORMATION */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[#711612] font-bold text-sm border-b pb-2">
-              <User className="w-4 h-4" />
-              <span>CUSTOMER INFORMATION</span>
+            <div className="flex items-center justify-between border-b pb-2">
+              <div className="flex items-center gap-2 text-[#711612] font-bold text-sm">
+                <User className="w-4 h-4" />
+                <span>CUSTOMER INFORMATION</span>
+              </div>
+              {formData.customerName && (
+                <Link
+                  to={`/admin/customers?search=${encodeURIComponent(formData.customerName)}&phone=${encodeURIComponent(formData.phone || '')}`}
+                  target="_blank"
+                  className="text-xs text-[#711612] hover:text-[#94201C] hover:underline font-bold inline-flex items-center gap-1 transition"
+                  title="Open customer profile in Customers Directory"
+                >
+                  <span>View Customer Profile</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              )}
             </div>
 
             {/* Customer Directory Dropdown */}
@@ -271,7 +306,20 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Customer Name *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">Customer Name *</label>
+                  {formData.customerName && (
+                    <Link
+                      to={`/admin/customers?search=${encodeURIComponent(formData.customerName)}&phone=${encodeURIComponent(formData.phone || '')}`}
+                      target="_blank"
+                      className="text-[11px] text-[#711612] hover:underline font-bold inline-flex items-center gap-1"
+                      title="Open customer profile in Customers Directory"
+                    >
+                      <span>View in Directory</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </Link>
+                  )}
+                </div>
                 <input
                   type="text"
                   required
@@ -357,6 +405,12 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
                   className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] shadow-sm"
                 />
               </div>
+
+              {/* Product Photo with 2 options: By Link and By Upload */}
+              <ProductPhotoInput
+                value={formData.productImage}
+                onChange={(productImage) => setFormData({ ...formData, productImage })}
+              />
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Quantity *</label>
@@ -464,27 +518,93 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
             </div>
 
             {/* Order Status Dropdown */}
-            <div className="bg-amber-50/70 p-4 rounded-xl border border-[#D4AF37]/50 shadow-sm space-y-2">
+            <div className="bg-amber-50/60 p-4 sm:p-5 rounded-2xl border border-[#D4AF37]/50 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-[#711612] uppercase tracking-wider">
+                <label className="block text-xs font-extrabold text-[#711612] uppercase tracking-wider">
                   Order Status *
                 </label>
                 <span className="text-[11px] font-semibold text-slate-500">
-                  Current: <strong className="text-[#711612]">{formData.status}</strong>
+                  Active: <strong className="text-[#711612] font-extrabold">{formData.status}</strong>
                 </span>
               </div>
+
+              {/* Status Select with Grouping */}
               <select
                 value={formData.status}
                 onChange={e => setFormData({ ...formData, status: e.target.value as OrderStatus })}
-                className="w-full text-sm font-semibold border border-slate-300 rounded-lg py-2.5 px-3 bg-white focus:border-[#711612] focus:ring-2 focus:ring-[#711612]/20 shadow-sm text-slate-800"
+                className="w-full text-sm font-semibold border border-slate-300 rounded-xl py-2.5 px-3 bg-white focus:border-[#711612] focus:ring-2 focus:ring-[#711612]/20 shadow-sm text-slate-800"
               >
-                {ALL_ORDER_STATUSES.map(st => (
-                  <option key={st} value={st}>{st}</option>
-                ))}
+                <optgroup label="── In-Progress Milestones ──">
+                  <option value="Purchased">1. Purchased</option>
+                  <option value="Received in Warehouse">2. Received in Warehouse</option>
+                  <option value="Dispatched from Warehouse">3. Dispatched from Warehouse</option>
+                  <option value="Arrived">4. Arrived</option>
+                </optgroup>
+                <optgroup label="── Final Resolution (Choose One) ──">
+                  <option value="Done">5. Done (Completed & Delivered)</option>
+                  <option value="Canceled">5. Canceled (Order Canceled)</option>
+                </optgroup>
               </select>
-              <p className="text-[11px] text-slate-500">
-                Change order status between Purchased, In Office, and Arrived.
-              </p>
+
+              {/* Sequential Milestones Buttons (Steps 1 to 4) */}
+              <div className="space-y-1.5 pt-1">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Milestone Progress (Steps 1–4):
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'Purchased', label: 'Purchased', num: '01' },
+                    { id: 'Received in Warehouse', label: 'In Warehouse', num: '02' },
+                    { id: 'Dispatched from Warehouse', label: 'Dispatched', num: '03' },
+                    { id: 'Arrived', label: 'Arrived', num: '04' },
+                  ].map((st) => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, status: st.id as OrderStatus })}
+                      className={`py-2 px-2 rounded-xl text-xs font-bold border text-center transition-all ${
+                        formData.status === st.id
+                          ? 'bg-[#711612] text-white border-[#711612] shadow-sm ring-2 ring-[#D4AF37]/40'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="text-[9px] text-[#D4AF37] uppercase font-mono">Step {st.num}</div>
+                      <div className="truncate">{st.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Final Step Outcome: Done or Canceled */}
+              <div className="space-y-1.5 pt-1 border-t border-slate-200/80">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Final Step Outcome (Choose Done or Canceled):
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, status: 'Done' })}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-extrabold border transition-all flex items-center justify-center gap-1.5 ${
+                      formData.status === 'Done'
+                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-300'
+                        : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'
+                    }`}
+                  >
+                    <span>✓ Done (Completed & Delivered)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, status: 'Canceled' })}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-extrabold border transition-all flex items-center justify-center gap-1.5 ${
+                      formData.status === 'Canceled'
+                        ? 'bg-red-600 text-white border-red-700 shadow-md ring-2 ring-red-300'
+                        : 'bg-white text-red-700 border-red-200 hover:bg-red-50'
+                    }`}
+                  >
+                    <span>✕ Canceled (Order Canceled)</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -524,13 +644,26 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
                 />
               </div>
 
-              <div className="sm:col-span-3">
+              <div className="sm:col-span-1">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Estimated Delivery Date *</label>
                 <input
                   type="date"
                   required
                   value={formData.estimatedDelivery}
                   onChange={e => setFormData({ ...formData, estimatedDelivery: e.target.value })}
+                  className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] shadow-sm bg-white font-medium text-slate-800"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Approximate Close Date to Get Order
+                  <span className="text-[10px] text-slate-400 font-normal ml-1">(Target Close Date)</span>
+                </label>
+                <input
+                  type="date"
+                  value={formData.approximateDeliveryDate}
+                  onChange={e => setFormData({ ...formData, approximateDeliveryDate: e.target.value })}
                   className="w-full text-sm border border-slate-300 rounded-md py-2 px-3 focus:border-[#711612] shadow-sm bg-white font-medium text-slate-800"
                 />
               </div>

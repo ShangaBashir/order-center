@@ -17,13 +17,13 @@ function normalizeStatus(st: string): string {
 }
 
 export async function migrateAllOrderStatuses() {
-  console.log('--- Migrating Order Statuses to the 3 approved statuses (Purchased, In Office, Arrived) ---');
+  console.log('--- Verifying Order Statuses for all lifecycle statuses (Purchased, Received in Warehouse, Dispatched from Warehouse, Arrived, Done) ---');
   
   // 1. Migrate MemoryStore
   const memOrders = memoryStore.getAllOrders();
   let memUpdated = 0;
   for (const ord of memOrders) {
-    const valid = ['Purchased', 'In Office', 'Arrived'];
+    const valid = ['Purchased', 'Received in Warehouse', 'Dispatched from Warehouse', 'Arrived', 'Done', 'Canceled'];
     if (!valid.includes(ord.status)) {
       const old = ord.status;
       ord.status = normalizeStatus(ord.status);
@@ -47,7 +47,7 @@ export async function migrateAllOrderStatuses() {
       const dbOrders = await ordersCol.find({}).toArray();
       let dbUpdated = 0;
       for (const doc of dbOrders) {
-        const valid = ['Purchased', 'In Office', 'Arrived'];
+        const valid = ['Purchased', 'Received in Warehouse', 'Dispatched from Warehouse', 'Arrived', 'Done', 'Canceled'];
         let needsUpdate = false;
         let newStatus = doc.status;
         if (!valid.includes(doc.status)) {

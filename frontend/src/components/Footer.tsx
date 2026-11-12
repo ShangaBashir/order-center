@@ -1,17 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Github } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { websiteContentApi } from '../api';
+import { WebsiteContent } from '../types';
 
 const Footer: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const currentLang = language as 'en' | 'ku' | 'ar';
   const currentYear = new Date().getFullYear();
+  const [content, setContent] = useState<WebsiteContent | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    websiteContentApi
+      .getContent()
+      .then((data) => {
+        if (isMounted && data) {
+          setContent(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const companyLinks = [
     { label: t('nav.home'), path: '/' },
     { label: t('nav.about'), path: '/about' },
     { label: t('nav.services'), path: '/services' },
     { label: t('nav.offers'), path: '/offers' },
+    { label: t('nav.products'), path: '/products' },
     { label: t('nav.contact'), path: '/contact' },
   ];
 
@@ -21,6 +41,30 @@ const Footer: React.FC = () => {
     { label: t('footer.faq'), path: '/contact' },
     { label: t('footer.support'), path: '/contact' },
   ];
+
+  // Dynamic values with fallbacks
+  const con = content?.contact;
+  const gen = content?.general;
+  const firstOffice = con?.officeLocations?.items?.[0];
+
+  const phone1 = con?.directChannels?.phone || gen?.phone || '0770 156 6233';
+  const phone2 = con?.directChannels?.secondaryPhone || gen?.secondaryPhone || '0751 194 6651';
+  const emailAddr = con?.directChannels?.email || gen?.email || 'Wazhamyassin98@gmail.com';
+  
+  const locationText =
+    firstOffice?.address?.[currentLang] ||
+    firstOffice?.address?.en ||
+    gen?.location?.[currentLang] ||
+    gen?.location?.en ||
+    'Bakhtyari, near Falafelo Fast Food, Sulaimaniyah, Iraq';
+
+  const mapTargetUrl =
+    firstOffice?.googleMapsUrl ||
+    (firstOffice?.mapCoordinates
+      ? `https://www.google.com/maps/search/?api=1&query=${firstOffice.mapCoordinates}`
+      : gen?.googleMapsUrl || 'https://www.google.com/maps/search/?api=1&query=35.5712825,45.3985297');
+
+  const footerBio = gen?.footerDescription?.[currentLang] || gen?.footerDescription?.en || t('footer.desc');
 
   return (
     <footer className="bg-charcoal text-white">
@@ -45,7 +89,7 @@ const Footer: React.FC = () => {
             </Link>
 
             <p className="text-white/50 text-sm leading-relaxed mb-6">
-              {t('footer.desc')}
+              {footerBio}
             </p>
 
           </div>
@@ -113,33 +157,46 @@ const Footer: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">Phone</div>
-                    <a href="tel:+9647701566233" className="block text-sm text-white/60 hover:text-white transition-colors">0770 156 6233</a>
-                    <a href="tel:+9647511946651" className="block text-sm text-white/60 hover:text-white transition-colors">0751 194 6651</a>
+                    <a href={`tel:${phone1.replace(/\s+/g, '')}`} className="block text-sm text-white/60 hover:text-white transition-colors">{phone1}</a>
+                    {phone2 && (
+                      <a href={`tel:${phone2.replace(/\s+/g, '')}`} className="block text-sm text-white/60 hover:text-white transition-colors">{phone2}</a>
+                    )}
                   </div>
                 </div>
               </li>
               <li>
-                <a href="mailto:Wazhamyassin98@gmail.com" className="flex items-start gap-3 group">
+                <a href={`mailto:${emailAddr}`} className="flex items-start gap-3 group">
                   <div className="w-8 h-8 rounded-sm bg-white/8 flex items-center justify-center flex-shrink-0 group-hover:bg-brand transition-colors">
                     <Mail className="w-3.5 h-3.5 text-white/50 group-hover:text-white" />
                   </div>
                   <div>
                     <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">Email</div>
-                    <div className="text-sm text-white/60 group-hover:text-white transition-colors">Wazhamyassin98@gmail.com</div>
+                    <div className="text-sm text-white/60 group-hover:text-white transition-colors">{emailAddr}</div>
                   </div>
                 </a>
               </li>
 
               <li>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-sm bg-white/8 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-3.5 h-3.5 text-white/50" />
+                <a
+                  href={mapTargetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 group"
+                  title="Open exact location in Google Maps"
+                >
+                  <div className="w-8 h-8 rounded-sm bg-white/8 flex items-center justify-center flex-shrink-0 group-hover:bg-gold transition-colors">
+                    <MapPin className="w-3.5 h-3.5 text-white/50 group-hover:text-charcoal" />
                   </div>
                   <div>
-                    <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">Location</div>
-                    <div className="text-sm text-white/60">Bakhtyari, near Falafelo Fast Food, Sulaimaniyah, Iraq</div>
+                    <div className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5 group-hover:text-gold transition-colors flex items-center gap-1.5">
+                      <span>Location</span>
+                      <span className="text-[9px] text-gold font-normal">↗ View Map</span>
+                    </div>
+                    <div className="text-sm text-white/60 group-hover:text-white transition-colors leading-snug">
+                      {locationText}
+                    </div>
                   </div>
-                </div>
+                </a>
               </li>
             </ul>
           </div>
@@ -155,15 +212,7 @@ const Footer: React.FC = () => {
           <p className="text-center sm:text-left">
             © {currentYear} OrderCenter. {t('footer.rights')}
           </p>
-          <a
-            href="https://github.com/ShangaBashir/order-center"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 hover:text-gold transition text-white/60 hover:underline"
-          >
-            <Github className="w-3.5 h-3.5" />
-            <span>GitHub Repository</span>
-          </a>
+          
         </div>
       </div>
     </footer>

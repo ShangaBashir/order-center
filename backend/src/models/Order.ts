@@ -9,6 +9,7 @@ export interface IStatusHistory {
 export interface IOrder {
   _id?: string;
   orderId: string;
+  customerId?: string;
   customerName: string;
   phone: string;
   email?: string;
@@ -26,6 +27,7 @@ export interface IOrder {
   shippingMethod: string;
   trackingNumber?: string;
   estimatedDelivery?: string;
+  approximateDeliveryDate?: string;
   status: string;
   statusHistory: IStatusHistory[];
   notes?: string;
@@ -41,6 +43,7 @@ const statusHistorySchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, required: true, unique: true, index: true },
+  customerId: { type: String, default: '', index: true },
   customerName: { type: String, required: true },
   phone: { type: String, required: true },
   email: { type: String, default: '' },
@@ -58,12 +61,17 @@ const orderSchema = new mongoose.Schema({
   shippingMethod: { type: String, default: 'Express Air' },
   trackingNumber: { type: String, default: '' },
   estimatedDelivery: { type: String, default: '' },
+  approximateDeliveryDate: { type: String, default: '' },
   status: {
     type: String,
     enum: [
       'Purchased',
+      'Received in Warehouse',
       'In Office',
-      'Arrived'
+      'Dispatched from Warehouse',
+      'Arrived',
+      'Done',
+      'Canceled'
     ],
     default: 'Purchased'
   },

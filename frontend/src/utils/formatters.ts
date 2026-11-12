@@ -21,3 +21,41 @@ export const formatDisplayDate = (val?: string): string => {
   }
   return trimmed;
 };
+
+
+export const formatDateTime = (val?: string | Date): string => {
+  if (!val) return '—';
+  try {
+    const d = typeof val === 'string' ? new Date(val) : val;
+    if (isNaN(d.getTime())) return String(val);
+    const datePart = d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    const timePart = d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+    return `${datePart} • ${timePart}`;
+  } catch (e) {
+    return String(val);
+  }
+};
+
+export const formatIsoDateTime = (val?: string | Date): string => {
+  if (!val) return '—';
+  try {
+    const d = typeof val === 'string' ? new Date(val) : val;
+    if (isNaN(d.getTime())) return String(val);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+  } catch (e) {
+    return String(val);
+  }
+};
