@@ -16,7 +16,7 @@ import { LogoutModal } from '../components/LogoutModal';
 import { useRealtimeOrders } from '../utils/realtime';
 
 export const UserAccountPage: React.FC = () => {
-  const { user, isAuthenticated, logout, linkCustomerId } = useAuth();
+  const { user, isAuthenticated, logout, linkCustomerId, loading } = useAuth();
   const { formatPriceWithIqd } = useSettings();
   const navigate = useNavigate();
 
@@ -39,12 +39,17 @@ export const UserAccountPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<AdminOrder | null>(null);
 
-  // Redirect if not logged in
+  // Redirect if not logged in (wait until the saved login has been read)
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!loading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, navigate]);
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [loading, isAuthenticated, navigate]);
 
   // Load customer profile if customerId is present
   const fetchCustomerDetails = useCallback(async () => {
@@ -623,8 +628,6 @@ export const UserAccountPage: React.FC = () => {
                   );
                 })}
               </div>
-
-              {/* Order List */}
               {loadingOrders ? (
                 <div className="p-8 text-center text-slate-400 text-xs">
                   <div className="w-6 h-6 border-2 border-[#711612] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
@@ -769,9 +772,7 @@ export const UserAccountPage: React.FC = () => {
                   <p className="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto">
                     {searchQuery
                       ? 'Try clearing your search terms or status filters.'
-                      : isVerifiedCustomer
-                      ? `Your account is connected with Customer ID ${user.customerId}. Any new orders assigned to your customer profile will appear here automatically.`
-                      : 'Have you received a Customer ID from Order Center? Click "Become a Customer" above to connect your account and view all your shipments.'}
+                      : `Your account is connected with Customer ID ${user.customerId}. Any new orders assigned to your customer profile will appear here automatically.`}
                   </p>
                   <div className="mt-4 flex justify-center gap-3">
                     <Link

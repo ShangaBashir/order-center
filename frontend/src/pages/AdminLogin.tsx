@@ -4,7 +4,7 @@ import { Lock, Mail, Shield, AlertCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const AdminLogin: React.FC = () => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, logout, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ export const AdminLogin: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (isAuthenticated) {
+  if (isAuthenticated && user?.role === 'admin') {
     navigate('/admin', { replace: true });
   }
 
@@ -21,7 +21,12 @@ export const AdminLogin: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      await login(email, password);
+      const loggedIn = await login(email, password);
+      if (loggedIn?.role !== 'admin') {
+        logout();
+        setError('This account does not have admin access.');
+        return;
+      }
       navigate('/admin');
     } catch (err: any) {
       setError(err.message || 'Login failed. Invalid admin credentials.');

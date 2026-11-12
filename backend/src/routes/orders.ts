@@ -1,12 +1,83 @@
 import { Router, Response } from 'express';
 import mongoose from 'mongoose';
 import Order from '../models/Order';
-import { authMiddleware, AuthRequest } from '../middleware/auth';
+import User from '../models/User';
+import { authMiddleware, adminOnly, AuthRequest } from '../middleware/auth';
 import { memoryStore } from '../memoryStore';
+import { RateLimiter } from '../middleware/rateLimit';
 import { realtimeHub } from '../realtime';
 
 const router = Router();
 const isDbConnected = () => mongoose.connection.readyState === 1;
+
+// Match an order by its Order ID, or by its database _id when the value is a valid ObjectId
+// (passing a non-ObjectId string as _id makes MongoDB reject the whole query).
+const orderIdFilter = (rawId: string) => {
+  const clauses: any[] = [{ orderId: rawId }];
+  if (mongoose.Types.ObjectId.isValid(rawId)) clauses.push({ _id: rawId });
+  return { $or: clauses };
+};
+
+// Last 10 digits, so 0770..., 964770... and +964 770... compare equal
+const phoneKey = (phone?: string) => (phone || '').replace(/\D/g, '').slice(-10);
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+interface Account {
+  inDb: boolean;
+  id: string;
+  email: string;
+  phone: string;
+  claimedOrders: string[];
+}
+
+// The logged-in account as stored on the server: the User document when MongoDB is connected,
+// the in-memory copy when it is offline (or for accounts that only exist in memory).
+async function loadAccount(req: AuthRequest): Promise<Account | null> {
+  const id = req.user?.id || '';
+  const email = (req.user?.email || '').trim().toLowerCase();
+
+  if (isDbConnected() && mongoose.Types.ObjectId.isValid(id)) {
+    const dbUser: any = await User.findById(id).lean();
+    if (!dbUser) return null;
+    return {
+      inDb: true,
+      id,
+      email: (dbUser.email || '').trim().toLowerCase(),
+      phone: dbUser.phone || '',
+      claimedOrders: dbUser.claimedOrders || []
+    };
+  }
+
+  const memUser = email ? memoryStore.findUserByEmail(email) : null;
+  if (!memUser) return null;
+  return {
+    inDb: false,
+    id,
+    email: memUser.email.trim().toLowerCase(),
+    phone: memUser.phone || '',
+    claimedOrders: memUser.claimedOrders || []
+  };
+}
+
+// Admin-only fields that customers never receive
+const forCustomer = (order: any) => {
+  const { notes, ...rest } = order;
+  return rest;
+};
+
+// Failed claim attempts: 20 per account per hour
+const claimFailures = new RateLimiter(20, 60 * 60 * 1000);
+
+// An order belongs to an account when its phone (last 10 digits) or its email matches the account
+const accountOwnsOrder = (order: any, account: Account) => {
+  const accountPhone = phoneKey(account.phone);
+  const orderEmail = (order.email || '').trim().toLowerCase();
+  return (
+    (accountPhone.length >= 7 && phoneKey(order.phone) === accountPhone) ||
+    (!!account.email && orderEmail === account.email)
+  );
+};
 
 // Helper to generate unique random Order ID (e.g. ORD-9X7K2M4P)
 async function generateUniqueOrderId(): Promise<string> {
@@ -37,7 +108,7 @@ async function generateUniqueOrderId(): Promise<string> {
 
   return candidateId;
 }// GET /api/orders/next-id - Preview next auto-assigned Order ID
-router.get('/next-id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/next-id', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const orderId = await generateUniqueOrderId();
     res.json({ orderId });
@@ -47,7 +118,7 @@ router.get('/next-id', authMiddleware, async (req: AuthRequest, res: Response) =
 });
 
 // 1. POST /api/orders (Create Order)
-router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const {
       customerId,
@@ -228,8 +299,85 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/orders/mine - Orders the logged-in customer has claimed with their Order ID.
+// Phone and email are not verified at sign-up, so they are never enough on their own.
+router.get('/mine', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const account = await loadAccount(req);
+    const claimed = account?.claimedOrders || [];
+    if (claimed.length === 0) return res.json([]);
+
+    const mine: any[] = isDbConnected()
+      ? await Order.find({ orderId: { $in: claimed } }).sort({ createdAt: -1 }).lean()
+      : memoryStore.getAllOrders().filter(o => claimed.includes(o.orderId));
+
+    // Re-check ownership: an admin may have changed the order's phone or email since it was claimed
+    return res.json(mine.filter(o => accountOwnsOrder(o, account!)).map(forCustomer));
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Server error retrieving your orders.' });
+  }
+});
+
+// POST /api/orders/claim - Add an order to the logged-in account using its Order ID.
+// Tracking numbers are not accepted: they are printed on parcels and are much easier to obtain.
+// The order must also match the account's phone or email. Unknown and non-matching orders get the
+// same 404, so this cannot be used to find out which Order IDs exist.
+router.post('/claim', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const notFound = () => res.status(404).json({ message: 'No order with this ID was found for your account.' });
+  try {
+    const raw = req.body?.orderId;
+    if (typeof raw !== 'string' || !raw.trim()) {
+      return res.status(400).json({ message: 'Please enter your Order ID.' });
+    }
+    const code = raw.trim();
+    if (code.length > 64) return notFound();
+
+    const account = await loadAccount(req);
+    if (!account) return notFound();
+
+    const limitKey = account.id || account.email;
+    const retryAfterMs = claimFailures.retryAfterMs(limitKey);
+    if (retryAfterMs > 0) {
+      const minutes = Math.ceil(retryAfterMs / 60000);
+      res.set('Retry-After', String(Math.ceil(retryAfterMs / 1000)));
+      return res.status(429).json({ message: `Too many attempts. Please try again in ${minutes} minute${minutes === 1 ? '' : 's'}.` });
+    }
+
+    let matches: any[];
+    if (isDbConnected()) {
+      const exact = new RegExp(`^${escapeRegex(code)}$`, 'i');
+      matches = await Order.find({ orderId: exact }).lean();
+    } else {
+      const q = code.toLowerCase();
+      matches = memoryStore.getAllOrders().filter(o => o.orderId && o.orderId.toLowerCase() === q);
+    }
+
+    const owned = matches.filter(o => o.orderId && accountOwnsOrder(o, account));
+    if (owned.length === 0) {
+      claimFailures.hit(limitKey);
+      return notFound();
+    }
+
+    const ids: string[] = Array.from(new Set(owned.map(o => o.orderId as string)));
+    const alreadyClaimed = ids.every(id => account.claimedOrders.includes(id));
+
+    if (account.inDb) {
+      await User.updateOne({ _id: account.id }, { $addToSet: { claimedOrders: { $each: ids } } });
+    }
+    // Keep the in-memory copy in step, as the other routes do
+    ids.forEach(id => memoryStore.addClaimedOrder(account.email, id));
+
+    return res.json({
+      message: alreadyClaimed ? 'This order is already in your account.' : 'Order added to your account.',
+      order: forCustomer(owned[0])
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Server error adding the order to your account.' });
+  }
+});
+
 // 3. GET /api/orders/:orderId (Get Single Order)
-router.get('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
     let order: any = null;
@@ -246,7 +394,7 @@ router.get('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
       order = await Order.findOne({ $or: orClauses }).lean();
     } catch (e) {}
 
-    if (!order) {
+    if (!order && !isDbConnected()) {
       order = memoryStore.findOrder(rawId);
     }
 
@@ -274,7 +422,7 @@ router.get('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
 });
 
 // 4. PUT /api/orders/:orderId (Update Order Details)
-router.put('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
     const updates = req.body;
@@ -306,7 +454,7 @@ router.put('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
     try {
       const updateDoc: any = { $set: updates };
       if (updates.status) {
-        const existingOrder = await Order.findOne({ $or: [{ orderId: rawId }, { _id: rawId }] });
+        const existingOrder = await Order.findOne(orderIdFilter(rawId));
         if (existingOrder && existingOrder.status !== updates.status) {
           updateDoc.$push = {
             statusHistory: {
@@ -318,19 +466,19 @@ router.put('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
         }
       }
       updatedOrder = await Order.findOneAndUpdate(
-        { $or: [{ orderId: rawId }, { _id: rawId }] },
+        orderIdFilter(rawId),
         updateDoc,
         { new: true }
       ).lean();
     } catch (e) {}
 
     const memOrder = memoryStore.updateOrder(rawId, updates);
+    const finalUpdated = isDbConnected() ? updatedOrder : memOrder;
 
-    if (!updatedOrder && !memOrder) {
+    if (!finalUpdated) {
       return res.status(404).json({ message: 'Order not found.' });
     }
 
-    const finalUpdated = updatedOrder || memOrder;
     realtimeHub.broadcast({
       type: 'ORDER_UPDATED',
       orderId: finalUpdated.orderId || rawId,
@@ -349,7 +497,7 @@ router.put('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) 
 });
 
 // 5. PUT /api/orders/:orderId/status (Update Order Status)
-router.put('/:orderId/status', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/:orderId/status', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
     const { status, note } = req.body;
@@ -364,7 +512,7 @@ router.put('/:orderId/status', authMiddleware, async (req: AuthRequest, res: Res
     let dbOrder: any = null;
     try {
       dbOrder = await Order.findOneAndUpdate(
-        { $or: [{ orderId: rawId }, { _id: rawId }] },
+        orderIdFilter(rawId),
         {
           $set: { status },
           $push: { statusHistory: historyItem }
@@ -374,12 +522,12 @@ router.put('/:orderId/status', authMiddleware, async (req: AuthRequest, res: Res
     } catch (e) {}
 
     const memOrder = memoryStore.updateOrderStatus(rawId, status, note);
+    const finalStatusOrder = isDbConnected() ? dbOrder : memOrder;
 
-    if (!dbOrder && !memOrder) {
+    if (!finalStatusOrder) {
       return res.status(404).json({ message: 'Order not found.' });
     }
 
-    const finalStatusOrder = dbOrder || memOrder;
     realtimeHub.broadcast({
       type: 'ORDER_STATUS_UPDATED',
       orderId: finalStatusOrder.orderId || rawId,
@@ -398,12 +546,12 @@ router.put('/:orderId/status', authMiddleware, async (req: AuthRequest, res: Res
 });
 
 // 6. DELETE /api/orders/:orderId (Delete Order)
-router.delete('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
 
     try {
-      await Order.deleteOne({ $or: [{ orderId: rawId }, { _id: rawId }] });
+      await Order.deleteOne(orderIdFilter(rawId));
     } catch (e) {}
 
     memoryStore.deleteOrder(rawId);

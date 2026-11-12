@@ -66,6 +66,7 @@ export interface UserData {
   customerId?: string;
   resetPasswordCode?: string;
   resetPasswordExpires?: string;
+  claimedOrders?: string[];
   createdAt: string;
 }
 
@@ -1874,6 +1875,16 @@ class MemoryStore {
     this.websiteContent = this.getDefaultWebsiteContent();
     this.saveWebsiteContentToFile();
     return this.websiteContent;
+  }
+
+  public addClaimedOrder(email: string, orderId: string): UserData | null {
+    const user = this.findUserByEmail(email);
+    if (!user) return null;
+    const claimed = user.claimedOrders || [];
+    if (!claimed.includes(orderId)) claimed.push(orderId);
+    user.claimedOrders = claimed;
+    this.saveUsersToFile();
+    return user;
   }
 }
 

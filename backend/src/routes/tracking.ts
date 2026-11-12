@@ -45,7 +45,8 @@ router.get('/:orderId', async (req, res) => {
       // Fallback memory search
     }
 
-    if (!order) {
+    // Demo orders in memory are only used when the database is offline
+    if (!order && mongoose.connection.readyState !== 1) {
       order = memoryStore.findOrder(rawId);
     }
 

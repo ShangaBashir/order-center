@@ -21,6 +21,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Expired or invalid admin session: clear it and send the admin back to the login page
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    const path = typeof window !== 'undefined' ? window.location.pathname : '';
+    if (error?.response?.status === 401 && path.startsWith('/admin') && path !== '/admin/login') {
+      localStorage.removeItem('ordercenter_admin_token');
+      localStorage.removeItem('ordercenter_admin_user');
+      window.location.href = '/admin/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// The demo data below is only used in local development when the API is not running.
+// On the live site, API errors are shown as errors instead of being replaced by demo data.
+const useDemoFallback = (err: any) => import.meta.env.DEV && !err?.response;
+const apiError = (err: any, fallback: string) => new Error(err?.response?.data?.message || fallback);
+
 // Fallback seed orders when backend is unreachable or during initial boot
 const DEMO_ORDERS: AdminOrder[] = [
   {
@@ -175,8 +194,8 @@ export const orderApi = {
       const res = await api.post('/auth/login', { email, password });
       return res.data;
     } catch (err: any) {
-      // Fallback client check if backend network isn't reachable
-      if (email.trim().toLowerCase() === 'admin@ordercenter.iq' || email.trim().toLowerCase() === 'admin') {
+      // Local development only: allow the demo admin while the API is not running
+      if (useDemoFallback(err) && (email.trim().toLowerCase() === 'admin@ordercenter.iq' || email.trim().toLowerCase() === 'admin')) {
         const dummyUser = { id: 'admin_1', name: 'OrderCenter Admin', email: 'admin@ordercenter.iq', role: 'admin' };
         const dummyToken = 'demo_admin_jwt_token';
         return { token: dummyToken, user: dummyUser };
@@ -299,13 +318,30 @@ export const orderApi = {
   async getOrders(): Promise<AdminOrder[]> {
     try {
       const res = await api.get('/orders');
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        localOrdersStore = res.data;
-        return res.data;
-      }
-      return localOrdersStore;
+      return Array.isArray(res.data) ? res.data : [];
     } catch (err) {
-      return localOrdersStore;
+      if (useDemoFallback(err)) return localOrdersStore;
+      throw apiError(err, 'Could not load orders');
+    }
+  },
+
+  // Orders belonging to the logged-in customer (filtered by the server)
+  async getMyOrders(): Promise<AdminOrder[]> {
+    try {
+      const res = await api.get('/orders/mine');
+      return Array.isArray(res.data) ? res.data : [];
+    } catch (err) {
+      throw apiError(err, 'Could not load your orders');
+    }
+  },
+
+  // Add an order to the logged-in account with its Order ID (or tracking number)
+  async claimOrder(orderId: string): Promise<{ message: string; order: AdminOrder }> {
+    try {
+      const res = await api.post('/orders/claim', { orderId });
+      return res.data;
+    } catch (err) {
+      throw apiError(err, 'Could not add this order');
     }
   },
 
@@ -315,6 +351,7 @@ export const orderApi = {
       const res = await api.get(`/orders/${orderId}`);
       return res.data;
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Order not found');
       const found = localOrdersStore.find(
         o => o.orderId.toLowerCase() === orderId.toLowerCase() || o._id === orderId
       );
@@ -331,6 +368,7 @@ export const orderApi = {
       localOrdersStore.unshift(created);
       return res.data;
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Failed to create order.');
       // Fallback client generation
       const year = new Date().getFullYear();
       const prefix = `HB-${year}-`;
@@ -397,6 +435,7 @@ export const orderApi = {
       const res = await api.put(`/orders/${orderId}`, updates);
       return res.data.order;
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Failed to update order.');
       const index = localOrdersStore.findIndex(
         o => o.orderId.toLowerCase() === orderId.toLowerCase() || o._id === orderId
       );
@@ -417,6 +456,7 @@ export const orderApi = {
       const res = await api.put(`/orders/${orderId}/status`, { status, note });
       return res.data.order;
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Failed to update status.');
       const index = localOrdersStore.findIndex(
         o => o.orderId.toLowerCase() === orderId.toLowerCase() || o._id === orderId
       );
@@ -442,6 +482,7 @@ export const orderApi = {
     try {
       await api.delete(`/orders/${orderId}`);
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Failed to delete order.');
       localOrdersStore = localOrdersStore.filter(
         o => o.orderId.toLowerCase() !== orderId.toLowerCase() && o._id !== orderId
       );
@@ -454,6 +495,7 @@ export const orderApi = {
       const res = await api.get('/orders/next-id');
       return res.data.orderId;
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Could not get the next order ID');
       const year = new Date().getFullYear();
       const prefix = `HB-${year}-`;
       let maxNum = 0;
@@ -476,6 +518,7 @@ export const orderApi = {
       const res = await api.get(`/tracking/${orderId}`);
       return res.data;
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Order not found. Please check your Order ID or Tracking Number.');
       const q = orderId.trim().toLowerCase();
       const found = localOrdersStore.find(
         o => o.orderId.toLowerCase() === q || (o.trackingNumber && o.trackingNumber.toLowerCase() === q)
@@ -572,12 +615,9 @@ export const customerApi = {
     let list: Customer[] = [];
     try {
       const res = await api.get('/customers');
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        list = res.data;
-      } else {
-        list = localCustomersStore;
-      }
+      list = Array.isArray(res.data) ? res.data : [];
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Could not load customers');
       list = localCustomersStore;
     }
 
@@ -607,6 +647,7 @@ export const customerApi = {
       }
       return res.data;
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Failed to create customer.');
       let prefix = '';
       if (custData.name && custData.name.trim()) {
         const clean = custData.name.trim().toUpperCase().replace(/[^A-Z]/g, '');
@@ -658,6 +699,7 @@ export const customerApi = {
       }
       return res.data;
     } catch (err) {
+      if (!useDemoFallback(err)) throw apiError(err, 'Failed to update customer.');
       const idx = localCustomersStore.findIndex(c => c.customerId === id || c._id === id);
       if (idx !== -1) {
         localCustomersStore[idx] = {
@@ -678,7 +720,7 @@ export const customerApi = {
     try {
       await api.delete(`/customers/${id}`);
     } catch (err) {
-      // fallback local deletion
+      if (!useDemoFallback(err)) throw apiError(err, 'Failed to delete customer.');
     }
     localCustomersStore = localCustomersStore.filter(
       c => c.customerId !== id && c._id !== id

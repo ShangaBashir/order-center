@@ -49,8 +49,12 @@ class RealtimeHub {
   }
 
   public broadcast(event: RealtimeOrderEvent) {
+    // The stream is public (tracking pages listen without logging in), so never send
+    // customer details: listeners only need the IDs and status, and refetch the rest.
+    const { order, ...rest } = event;
     const payload = JSON.stringify({
-      ...event,
+      ...rest,
+      order: order ? { orderId: order.orderId, trackingNumber: order.trackingNumber } : undefined,
       timestamp: event.timestamp || Date.now()
     });
 

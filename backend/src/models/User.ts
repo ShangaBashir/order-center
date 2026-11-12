@@ -11,6 +11,8 @@ const userSchema = new mongoose.Schema({
   customerId: { type: String, default: '' },
   resetPasswordCode: { type: String, default: '' },
   resetPasswordExpires: { type: Date },
+  // Order IDs this account has claimed (see POST /api/orders/claim)
+  claimedOrders: { type: [String], default: [] },
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);
