@@ -354,16 +354,6 @@ export const UserAccountPage: React.FC = () => {
                     <span>ID: {user.customerId}</span>
                   </div>
                 )}
-
-                {user.role === 'admin' && (
-                  <Link
-                    to="/admin"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#D4AF37] hover:bg-amber-400 text-black text-xs font-bold transition shadow-sm"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-black" />
-                    <span>Admin Dashboard</span>
-                  </Link>
-                )}
               </div>
             </div>
           </div>
