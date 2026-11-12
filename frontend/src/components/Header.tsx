@@ -40,6 +40,8 @@ const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
 
+  const isStandardUser = Boolean(isAuthenticated && user && user.role !== 'admin' && (!user.isCustomer || !user.customerId));
+
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -204,15 +206,17 @@ const Header: React.FC = () => {
                 <Search className="w-[18px] h-[18px]" />
               </button>
 
-              {/* Tracking */}
-              <button
-                id="header-tracking-btn"
-                onClick={() => setTrackingOpen(true)}
-                title="Track Order"
-                className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-sm text-charcoal-light hover:text-brand hover:bg-brand/8 transition-all duration-200"
-              >
-                <Package className="w-[18px] h-[18px]" />
-              </button>
+              {/* Tracking (Hidden for Standard Users) */}
+              {!isStandardUser && (
+                <button
+                  id="header-tracking-btn"
+                  onClick={() => setTrackingOpen(true)}
+                  title="Track Order"
+                  className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-sm text-charcoal-light hover:text-brand hover:bg-brand/8 transition-all duration-200"
+                >
+                  <Package className="w-[18px] h-[18px]" />
+                </button>
+              )}
 
               {/* Language */}
               <div ref={langRef} className="relative">
@@ -465,7 +469,21 @@ const Header: React.FC = () => {
             </div>
 
             {/* Tracking Input */}
-            <div className="p-5">
+            <div className="p-5 space-y-4">
+              {isStandardUser && (
+                <div className="p-3.5 rounded-sm bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-3">
+                  <span>
+                    You are signed in as a <strong>Standard User</strong>. Orders and live tracking are restricted to verified customers.
+                  </span>
+                  <Link
+                    to="/account"
+                    onClick={handleCloseTracking}
+                    className="text-brand font-bold underline hover:opacity-80 flex-shrink-0"
+                  >
+                    Become a Customer
+                  </Link>
+                </div>
+              )}
               <div className="flex gap-3">
                 <input
                   ref={trackingInputRef}
@@ -491,12 +509,12 @@ const Header: React.FC = () => {
                 </button>
               </div>
 
-              {/* Result: Not Found */}
+              {/* Result: Not Found or Forbidden */}
               {trackingResult === 'notfound' && (
                 <div className="mt-4 p-4 rounded-sm bg-red-50 border border-red-200 flex items-center gap-3">
                   <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-semibold text-red-700">Order not found</p>
+                    <p className="text-sm font-semibold text-red-700">Unable to View Order</p>
                     <p className="text-xs text-red-500">{trackingError || 'Please check your Order ID or Tracking Number and try again.'}</p>
                   </div>
                 </div>

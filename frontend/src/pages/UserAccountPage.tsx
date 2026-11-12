@@ -323,14 +323,16 @@ export const UserAccountPage: React.FC = () => {
 
               {/* Quick actions inside banner */}
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-4 pt-4 border-t border-white/15">
-                {/* Track Orders Button */}
-                <Link
-                  to="/track"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-sm transition border border-white/15 shadow-sm"
-                >
-                  <Package className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>Track Orders</span>
-                </Link>
+                {/* Track Orders Button (ONLY for verified customers) */}
+                {isVerifiedCustomer && (
+                  <Link
+                    to="/track"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-sm transition border border-white/15 shadow-sm"
+                  >
+                    <Package className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    <span>Track Orders</span>
+                  </Link>
+                )}
 
                 {/* Become Customer Button (Banner shortcut if not linked) */}
                 {!isVerifiedCustomer ? (

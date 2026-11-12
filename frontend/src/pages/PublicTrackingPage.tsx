@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
-  Search, Package, AlertCircle, ArrowLeft
+  Search, Package, AlertCircle, ArrowLeft, Lock, Sparkles
 } from 'lucide-react';
 import { orderApi } from '../api';
 import { PublicTrackingData } from '../types';
@@ -9,12 +9,16 @@ import { StatusTimeline } from '../components/StatusTimeline';
 import { useSettings } from '../context/SettingsContext';
 import { useRealtimeTracking } from '../utils/realtime';
 import { formatDisplayDate, formatDateTime } from '../utils/formatters';
+import { useAuth } from '../context/AuthContext';
 
 export const PublicTrackingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const { formatPriceWithIqd } = useSettings();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialId = searchParams.get('id') || searchParams.get('q') || 'HB-2026-00001';
+  const initialId = searchParams.get('id') || searchParams.get('q') || '';
+
+  const isStandardUser = Boolean(isAuthenticated && user && user.role !== 'admin' && (!user.isCustomer || !user.customerId));
 
   const [orderIdInput, setOrderIdInput] = useState(initialId);
   const [trackingData, setTrackingData] = useState<PublicTrackingData | null>(null);
@@ -82,8 +86,8 @@ export const PublicTrackingPage: React.FC = () => {
   }, [activeLookupId, fetchTrackingSilent]);
 
   useEffect(() => {
-    if (initialId) {
-      fetchTracking(initialId);
+    if (initialId && initialId.trim()) {
+      fetchTracking(initialId.trim());
     }
   }, []);
 
@@ -121,6 +125,25 @@ export const PublicTrackingPage: React.FC = () => {
             </button>
           </div>
           
+          {/* Standard User Notice */}
+          {isStandardUser && (
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <Lock className="w-5 h-5 text-amber-700 flex-shrink-0" />
+                <span>
+                  You are signed in as a <strong className="text-amber-950">Standard User</strong>. Orders and live tracking are restricted to verified customers.
+                </span>
+              </div>
+              <Link
+                to="/account"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#711612] text-amber-300 hover:text-white font-bold text-xs shadow-sm flex-shrink-0"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Become a Customer</span>
+              </Link>
+            </div>
+          )}
+
           {/* Tracking Search Card */}
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 sm:p-8 space-y-6">
             <div className="text-center space-y-2">

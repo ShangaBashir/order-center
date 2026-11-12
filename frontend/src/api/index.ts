@@ -320,7 +320,19 @@ export const orderApi = {
       const res = await api.get('/orders');
       return Array.isArray(res.data) ? res.data : [];
     } catch (err) {
-      if (useDemoFallback(err)) return localOrdersStore;
+      if (useDemoFallback(err)) {
+        try {
+          const storedUser = localStorage.getItem('ordercenter_admin_user');
+          const userObj = storedUser ? JSON.parse(storedUser) : null;
+          if (!userObj || userObj.role !== 'admin') {
+            const isCustomer = Boolean(userObj?.isCustomer && userObj?.customerId);
+            if (!isCustomer) return [];
+            const userCustId = (userObj.customerId || '').trim().toUpperCase();
+            return localOrdersStore.filter(o => (o.customerId || '').trim().toUpperCase() === userCustId);
+          }
+        } catch (e) {}
+        return localOrdersStore;
+      }
       throw apiError(err, 'Could not load orders');
     }
   },
@@ -512,18 +524,39 @@ export const orderApi = {
     }
   },
 
-  // Public Customer Tracking
+  // Customer Tracking: strictly scoped to customer's own orders
   async trackOrder(orderId: string): Promise<PublicTrackingData> {
     try {
       const res = await api.get(`/tracking/${orderId}`);
       return res.data;
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.response?.data?.message) {
+        throw new Error(err.response.data.message);
+      }
       if (!useDemoFallback(err)) throw apiError(err, 'Order not found. Please check your Order ID or Tracking Number.');
+
+      const storedUser = localStorage.getItem('ordercenter_admin_user');
+      const userObj = storedUser ? JSON.parse(storedUser) : null;
+      if (!userObj || userObj.role !== 'admin') {
+        const isCustomer = Boolean(userObj?.isCustomer && userObj?.customerId);
+        if (!isCustomer) {
+          throw new Error('Standard user accounts cannot view orders. Please connect your Customer ID in My Account to view your orders.');
+        }
+      }
+
       const q = orderId.trim().toLowerCase();
       const found = localOrdersStore.find(
         o => o.orderId.toLowerCase() === q || (o.trackingNumber && o.trackingNumber.toLowerCase() === q)
       );
       if (found) {
+        if (userObj && userObj.role !== 'admin') {
+          const ordCustId = (found.customerId || '').trim().toUpperCase();
+          const userCustId = (userObj.customerId || '').trim().toUpperCase();
+          if (!ordCustId || ordCustId !== userCustId) {
+            throw new Error('Access denied. This order does not belong to your account. You can only view your own orders.');
+          }
+        }
+
         return {
           orderId: found.orderId,
           customerName: found.customerName,
@@ -537,6 +570,7 @@ export const orderApi = {
           shippingMethod: found.shippingMethod,
           trackingNumber: found.trackingNumber,
           estimatedDelivery: found.estimatedDelivery,
+          approximateDeliveryDate: found.approximateDeliveryDate,
           status: found.status,
           statusHistory: found.statusHistory || [],
           updatedAt: found.updatedAt || found.createdAt
