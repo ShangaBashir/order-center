@@ -6,6 +6,8 @@ import Customer from '../models/Customer';
 import { memoryStore } from '../memoryStore';
 import { sendPasswordResetEmail } from '../utils/mailer';
 import { RateLimiter, getClientIp, sendTooManyRequests } from '../middleware/rateLimit';
+import crypto from 'crypto';
+import mongoose from 'mongoose';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
@@ -30,6 +32,18 @@ const isAdminCredentials = (email: string, password: string) => {
 const loginFailuresByIp = new RateLimiter(10, 15 * 60 * 1000);
 const loginFailuresByEmail = new RateLimiter(30, 60 * 60 * 1000);
 const signupsByIp = new RateLimiter(10, 60 * 60 * 1000);
+// Customer ID linking: 10 failed attempts per account and 20 per IP per hour
+const linkFailuresByUser = new RateLimiter(10, 60 * 60 * 1000);
+const linkFailuresByIp = new RateLimiter(20, 60 * 60 * 1000);
+// Password reset: 5 code requests per email and 10 per IP per 15 minutes;
+// 5 wrong codes per email and 20 per IP per 15 minutes (the code is voided after 5 wrong tries)
+const resetRequestsByEmail = new RateLimiter(5, 15 * 60 * 1000);
+const resetRequestsByIp = new RateLimiter(10, 15 * 60 * 1000);
+const resetFailuresByEmail = new RateLimiter(5, 15 * 60 * 1000);
+const resetFailuresByIp = new RateLimiter(20, 15 * 60 * 1000);
+
+// Last 10 digits, so 0770..., 964770... and +964 770... compare equal
+const phoneKey = (phone?: string) => (phone || '').replace(/\D/g, '').slice(-10);
 
 const recordLoginFailure = (ip: string, email: string) => {
   loginFailuresByIp.hit(ip, email);
@@ -129,7 +143,7 @@ router.post('/login', async (req: Request, res: Response) => {
 // 2. POST /api/auth/register - Register User / Customer
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { name, email, password, phone, isCustomer, customerId } = req.body;
+    const { name, email, password, phone, isCustomer } = req.body;
 
     if (!name || !email || !password || !phone || !phone.trim()) {
       return res.status(400).json({ message: 'Full name, email address, phone number, and password are all required.' });
@@ -148,7 +162,9 @@ router.post('/register', async (req: Request, res: Response) => {
     signupsByIp.hit(ip);
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanCustomerId = isCustomer && customerId ? customerId.trim().toUpperCase() : '';
+    // A Customer ID is never accepted from the sign-up form: it would let anyone attach another
+    // customer's orders. Customers connect their ID afterwards via /link-customer, which verifies it.
+    const cleanCustomerId = '';
 
     // The admin email can never be registered from the public sign-up form
     if (cleanEmail === ADMIN_EMAIL || cleanEmail === 'admin@ordercenter.iq') {
@@ -318,9 +334,30 @@ router.post('/link-customer', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Customer ID is required' });
     }
 
-    const cleanCustomerId = customerId.trim().toUpperCase();
+    const cleanCustomerId = String(customerId).trim().toUpperCase();
+    const ip = getClientIp(req);
+    const userKey = String(decoded.id || decoded.email || '');
 
-    // Verify Customer exists in MongoDB or memoryStore
+    const retryAfterMs = Math.max(linkFailuresByUser.retryAfterMs(userKey), linkFailuresByIp.retryAfterMs(ip));
+    if (retryAfterMs > 0) {
+      return sendTooManyRequests(res, retryAfterMs, 'Customer ID');
+    }
+
+    // Unknown IDs and IDs that do not belong to this account get the same answer,
+    // so this cannot be used to find out which Customer IDs exist.
+    const notLinked = () => {
+      linkFailuresByUser.hit(userKey);
+      linkFailuresByIp.hit(ip);
+      return res.status(404).json({
+        message: 'This Customer ID could not be connected to your account. Please check the ID, and make sure your account uses the same phone number or email address that Order Center has on file for you.'
+      });
+    };
+
+    if (cleanCustomerId.length > 64 || !/^[A-Z0-9-]+$/.test(cleanCustomerId)) {
+      return notLinked();
+    }
+
+    // Verify Customer exists in MongoDB or memoryStore (exact match; the ID is validated above)
     let customer: any = null;
     try {
       customer = await Customer.findOne({
@@ -328,15 +365,41 @@ router.post('/link-customer', async (req: Request, res: Response) => {
       }).lean();
     } catch (e) {}
 
-    if (!customer) {
+    if (!customer && mongoose.connection.readyState !== 1) {
       customer = memoryStore.findCustomerById(cleanCustomerId);
     }
 
     if (!customer) {
-      return res.status(404).json({
-        message: `Customer ID "${cleanCustomerId}" was not found. Please verify the ID provided by Order Center.`
-      });
+      return notLinked();
     }
+
+    // Proof of ownership: the Customer ID alone is not enough. The account's stored phone
+    // (last 10 digits) or email must match the customer record Order Center created.
+    let account: any = null;
+    try {
+      if (mongoose.Types.ObjectId.isValid(String(decoded.id))) {
+        account = await User.findById(decoded.id).lean();
+      }
+    } catch (e) {}
+    if (!account && decoded.email) {
+      account = memoryStore.findUserByEmail(String(decoded.email).trim().toLowerCase());
+    }
+    if (!account) {
+      return notLinked();
+    }
+
+    const accountPhone = phoneKey(account.phone);
+    const accountEmail = (account.email || '').trim().toLowerCase();
+    const customerPhones = [customer.phone, customer.secondaryPhone].map(phoneKey).filter(p => p.length >= 7);
+    const customerEmail = (customer.email || '').trim().toLowerCase();
+    const ownsCustomer =
+      (accountPhone.length >= 7 && customerPhones.includes(accountPhone)) ||
+      (!!accountEmail && !!customerEmail && accountEmail === customerEmail);
+
+    if (decoded.role !== 'admin' && !ownsCustomer) {
+      return notLinked();
+    }
+    linkFailuresByUser.clear(userKey);
 
     // Find and update the user in DB / memoryStore
     let updatedUser: any = null;
@@ -479,7 +542,22 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Please enter your email address' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanEmail = String(email).trim().toLowerCase();
+    const ip = getClientIp(req);
+
+    const retryAfterMs = Math.max(resetRequestsByEmail.retryAfterMs(cleanEmail), resetRequestsByIp.retryAfterMs(ip));
+    if (retryAfterMs > 0) {
+      return sendTooManyRequests(res, retryAfterMs, 'password reset');
+    }
+    resetRequestsByEmail.hit(cleanEmail);
+    resetRequestsByIp.hit(ip);
+
+    // Same answer whether or not the account exists, so this cannot be used to find registered emails
+    const genericResponse = () => res.json({
+      message: 'If an account exists for this email address, a 6-digit verification code has been sent to it.',
+      email: cleanEmail,
+      expiresInSeconds: 60
+    });
 
     // Check if account exists
     let user: any = null;
@@ -487,25 +565,20 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       user = await User.findOne({ email: cleanEmail });
     } catch (e) {}
 
-    if (!user) {
+    if (!user && mongoose.connection.readyState !== 1) {
       user = memoryStore.findUserByEmail(cleanEmail);
     }
 
-    // Special check for seed admin account
-    if (!user && (cleanEmail === 'admin@ordercenter.iq' || cleanEmail === 'admin@gmail.com' || cleanEmail === 'admin')) {
-      user = {
-        name: 'OrderCenter Admin',
-        email: 'admin@ordercenter.iq',
-        role: 'admin'
-      };
-    }
-
+    // The built-in admin login comes from server settings and cannot be reset by email
     if (!user) {
-      return res.status(404).json({ message: 'No account found with this email address.' });
+      return genericResponse();
     }
 
-    // Generate 6-digit verification code (valid for 60 seconds)
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // A new code also clears earlier wrong guesses for this email
+    resetFailuresByEmail.clear(cleanEmail);
+
+    // Generate 6-digit verification code (valid for 60 seconds) with a cryptographically secure RNG
+    const verificationCode = crypto.randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 65 * 1000); // 65 seconds (60s timer + 5s network grace)
 
     // Save code to MongoDB if connected
@@ -528,11 +601,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     // Send email from website email (Wazhamyassin98@gmail.com)
     await sendPasswordResetEmail(cleanEmail, user.name || 'Customer', verificationCode);
 
-    return res.json({
-      message: 'A 6-digit verification code has been sent to your email address from Wazhamyassin98@gmail.com.',
-      email: cleanEmail,
-      expiresInSeconds: 60
-    });
+    return genericResponse();
   } catch (err: any) {
     console.error('Forgot password error:', err);
     return res.status(500).json({ message: 'Failed to process password reset request. ' + err.message });
@@ -552,8 +621,27 @@ router.post('/reset-password', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'New password must be at least 6 characters long' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanCode = code.trim();
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanCode = String(code).trim();
+    const ip = getClientIp(req);
+
+    const retryAfterMs = Math.max(resetFailuresByEmail.retryAfterMs(cleanEmail), resetFailuresByIp.retryAfterMs(ip));
+    if (retryAfterMs > 0) {
+      return sendTooManyRequests(res, retryAfterMs, 'verification code');
+    }
+
+    const invalidCode = async () => {
+      resetFailuresByEmail.hit(cleanEmail);
+      resetFailuresByIp.hit(ip);
+      // After 5 wrong codes the current code is voided; the user must request a new one
+      if (resetFailuresByEmail.retryAfterMs(cleanEmail) > 0) {
+        try {
+          await User.findOneAndUpdate({ email: cleanEmail }, { resetPasswordCode: '', resetPasswordExpires: null });
+        } catch (e) {}
+        memoryStore.updateUser(cleanEmail, { resetPasswordCode: '', resetPasswordExpires: undefined });
+      }
+      return res.status(400).json({ message: 'Invalid verification code. Please check your email and try again.' });
+    };
 
     // Find user
     let user: any = null;
@@ -566,15 +654,16 @@ router.post('/reset-password', async (req: Request, res: Response) => {
     }
 
     if (!user) {
-      return res.status(404).json({ message: 'Account not found.' });
+      return invalidCode();
     }
 
     // Check code and expiration
     const savedCode = user.resetPasswordCode;
     const expiresTime = user.resetPasswordExpires ? new Date(user.resetPasswordExpires).getTime() : 0;
 
-    if (!savedCode || savedCode !== cleanCode) {
-      return res.status(400).json({ message: 'Invalid verification code. Please check your email and try again.' });
+    if (!savedCode || savedCode.length !== cleanCode.length ||
+        !crypto.timingSafeEqual(Buffer.from(savedCode), Buffer.from(cleanCode))) {
+      return invalidCode();
     }
 
     if (Date.now() > expiresTime) {

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { memoryStore } from '../memoryStore';
 import WebsiteContentModel from '../models/WebsiteContent';
+import { adminOnly } from '../middleware/auth';
 
 const router = Router();
 
@@ -27,7 +28,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // PUT /api/website-content - Update website content
-router.put('/', async (req: Request, res: Response) => {
+router.put('/', adminOnly, async (req: Request, res: Response) => {
   try {
     const incomingData = req.body;
     if (!incomingData || typeof incomingData !== 'object') {
@@ -125,7 +126,7 @@ router.put('/', async (req: Request, res: Response) => {
 });
 
 // POST /api/website-content/reset - Reset to factory defaults
-router.post('/reset', async (req: Request, res: Response) => {
+router.post('/reset', adminOnly, async (req: Request, res: Response) => {
   try {
     const defaults = memoryStore.resetWebsiteContent();
 

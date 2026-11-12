@@ -7,6 +7,12 @@ dotenv.config();
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/global-order';
 
+// Every status the app accepts today. Entries already using one of these are never touched.
+const VALID_STATUSES = ['Purchased', 'Received in Warehouse', 'Dispatched from Warehouse', 'Arrived', 'Done', 'Canceled', 'In Office'];
+const isValidStatus = (st: string) => VALID_STATUSES.includes(st);
+// Only legacy/unknown values are mapped; valid values pass through unchanged
+const fixStatus = (st: string) => (isValidStatus(st) ? st : normalizeStatus(st));
+
 function normalizeStatus(st: string): string {
   if (!st) return 'Purchased';
   const lower = st.toLowerCase().trim();
@@ -23,8 +29,7 @@ export async function migrateAllOrderStatuses() {
   const memOrders = memoryStore.getAllOrders();
   let memUpdated = 0;
   for (const ord of memOrders) {
-    const valid = ['Purchased', 'Received in Warehouse', 'Dispatched from Warehouse', 'Arrived', 'Done', 'Canceled'];
-    if (!valid.includes(ord.status)) {
+    if (!isValidStatus(ord.status)) {
       const old = ord.status;
       ord.status = normalizeStatus(ord.status);
       console.log(`Memory order ${ord.orderId}: changed status "${old}" -> "${ord.status}"`);
@@ -32,7 +37,7 @@ export async function migrateAllOrderStatuses() {
     }
     if (Array.isArray(ord.statusHistory)) {
       for (const h of ord.statusHistory) {
-        if (!valid.includes(h.status)) {
+        if (!isValidStatus(h.status)) {
           h.status = normalizeStatus(h.status);
         }
       }
@@ -47,26 +52,19 @@ export async function migrateAllOrderStatuses() {
       const dbOrders = await ordersCol.find({}).toArray();
       let dbUpdated = 0;
       for (const doc of dbOrders) {
-        const valid = ['Purchased', 'Received in Warehouse', 'Dispatched from Warehouse', 'Arrived', 'Done', 'Canceled'];
-        let needsUpdate = false;
-        let newStatus = doc.status;
-        if (!valid.includes(doc.status)) {
-          newStatus = normalizeStatus(doc.status);
-          needsUpdate = true;
+        const update: Record<string, any> = {};
+        if (!isValidStatus(doc.status)) {
+          update.status = normalizeStatus(doc.status);
         }
 
-        const newHistory = Array.isArray(doc.statusHistory)
-          ? doc.statusHistory.map((h: any) => ({
-              ...h,
-              status: normalizeStatus(h.status)
-            }))
-          : [];
+        // Only rewrite history when an entry has a legacy/unknown status; valid entries stay as they are
+        if (Array.isArray(doc.statusHistory) && doc.statusHistory.some((h: any) => !isValidStatus(h?.status))) {
+          update.statusHistory = doc.statusHistory.map((h: any) => ({ ...h, status: fixStatus(h?.status) }));
+        }
 
-        if (needsUpdate || JSON.stringify(newHistory) !== JSON.stringify(doc.statusHistory)) {
-          await ordersCol.updateOne(
-            { _id: doc._id },
-            { $set: { status: newStatus, statusHistory: newHistory } }
-          );
+        if (Object.keys(update).length > 0) {
+          const newStatus = update.status ?? doc.status;
+          await ordersCol.updateOne({ _id: doc._id }, { $set: update });
           dbUpdated++;
           console.log(`MongoDB order ${doc.orderId || doc._id}: updated status to "${newStatus}"`);
         }

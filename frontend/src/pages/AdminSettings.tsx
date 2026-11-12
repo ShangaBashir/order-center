@@ -28,7 +28,12 @@ export const AdminSettings: React.FC = () => {
       setBackupSuccess(null);
 
       // Attempt fetch from backend
-      const res = await axios.get('http://localhost:5000/api/backup');
+      // Admin-only endpoint: send the admin token, and use the same API base as the rest of the app
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const token = localStorage.getItem('ordercenter_admin_token');
+      const res = await axios.get(`${apiBase}/backup`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       const backupData = res.data.backup || res.data;
 
       const jsonStr = JSON.stringify(backupData, null, 2);
@@ -48,10 +53,7 @@ export const AdminSettings: React.FC = () => {
       setTimeout(() => setBackupSuccess(null), 5000);
     } catch (err: any) {
       console.error('Backup error:', err);
-      // Fallback direct browser download link
-      window.open('http://localhost:5000/api/backup/download', '_blank');
-      setBackupSuccess('Downloading backup file directly from API server...');
-      setTimeout(() => setBackupSuccess(null), 5000);
+      setBackupError(err?.response?.data?.message || err?.response?.data?.error || 'Backup failed. Please sign in again as admin and retry.');
     } finally {
       setIsBackingUp(false);
     }
