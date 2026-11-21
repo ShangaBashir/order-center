@@ -13,12 +13,17 @@ export interface AuthRequest extends Request {
   };
 }
 
+// Accounts with these emails get admin access. Public sign-up refuses them (routes/auth.ts),
+// so nobody can create a new account with one of these addresses.
+export const RESERVED_ADMIN_EMAILS = ['shanga.bashir22@gmail.com'];
+
 export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   const token = req.header('Authorization')?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
 
-  // Support local development demo admin token seamlessly
-  if (token === 'demo_admin_jwt_token') {
+  // Local development only: the demo admin token must never work in production,
+  // where it would give anyone full admin access.
+  if (token === 'demo_admin_jwt_token' && process.env.NODE_ENV !== 'production' && !process.env.ADMIN_PASSWORD) {
     req.user = {
       id: 'admin_1',
       role: 'admin',
@@ -42,13 +47,12 @@ export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) =
   authMiddleware(req, res, () => {
     const role = (req.user?.role || '').toLowerCase();
     const email = (req.user?.email || '').toLowerCase();
+    // Tokens are signed by the server, so role, id and email can be trusted. Only emails that
+    // cannot be claimed through public sign-up may be listed here (see RESERVED_ADMIN_EMAILS).
     const isAdmin =
       role === 'admin' ||
-      email === 'admin@ordercenter.iq' ||
-      email === 'admin@gmail.com' ||
-      email === 'admin' ||
-      email === 'shanga.bashir22@gmail.com' ||
-      req.user?.id === 'admin_1';
+      req.user?.id === 'admin_1' ||
+      RESERVED_ADMIN_EMAILS.includes(email);
 
     if (!isAdmin) {
       return res.status(403).json({

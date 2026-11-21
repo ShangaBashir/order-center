@@ -7,6 +7,7 @@ import { memoryStore } from '../memoryStore';
 import { sendPasswordResetEmail } from '../utils/mailer';
 import { RateLimiter, getClientIp, sendTooManyRequests } from '../middleware/rateLimit';
 import crypto from 'crypto';
+import { RESERVED_ADMIN_EMAILS } from '../middleware/auth';
 import mongoose from 'mongoose';
 
 const router = Router();
@@ -167,7 +168,8 @@ router.post('/register', async (req: Request, res: Response) => {
     const cleanCustomerId = '';
 
     // The admin email can never be registered from the public sign-up form
-    if (cleanEmail === ADMIN_EMAIL || cleanEmail === 'admin@ordercenter.iq') {
+    if (cleanEmail === ADMIN_EMAIL || cleanEmail === 'admin@ordercenter.iq' || cleanEmail === 'admin@gmail.com' ||
+        cleanEmail === 'admin' || RESERVED_ADMIN_EMAILS.includes(cleanEmail)) {
       return res.status(400).json({ message: 'An account with this email address already exists' });
     }
 
@@ -365,16 +367,41 @@ router.post('/link-customer', async (req: Request, res: Response) => {
       }).lean();
     } catch (e) {}
 
-    if (!customer) {
+    if (!customer && mongoose.connection.readyState !== 1) {
       customer = memoryStore.findCustomerById(cleanCustomerId);
     }
 
     if (!customer) {
-      return res.status(404).json({
-        message: `Customer ID "${cleanCustomerId}" not found. Please verify your Customer ID or contact support.`
-      });
+      return notLinked();
     }
 
+    // Proof of ownership: the Customer ID alone is not enough (IDs are short and guessable, and
+    // linking reveals the customer's phone, address and orders). The account's stored phone
+    // (last 10 digits) or email must match the customer record Order Center created.
+    let account: any = null;
+    try {
+      if (mongoose.Types.ObjectId.isValid(String(decoded.id))) {
+        account = await User.findById(decoded.id).lean();
+      }
+    } catch (e) {}
+    if (!account && decoded.email) {
+      account = memoryStore.findUserByEmail(String(decoded.email).trim().toLowerCase());
+    }
+    if (!account) {
+      return notLinked();
+    }
+
+    const accountPhone = phoneKey(account.phone);
+    const accountEmail = (account.email || '').trim().toLowerCase();
+    const customerPhones = [customer.phone, customer.secondaryPhone].map(phoneKey).filter(p => p.length >= 7);
+    const customerEmail = (customer.email || '').trim().toLowerCase();
+    const ownsCustomer =
+      (accountPhone.length >= 7 && customerPhones.includes(accountPhone)) ||
+      (!!accountEmail && !!customerEmail && accountEmail === customerEmail);
+
+    if (decoded.role !== 'admin' && !ownsCustomer) {
+      return notLinked();
+    }
     linkFailuresByUser.clear(userKey);
 
     // Find and update the user in DB / memoryStore
