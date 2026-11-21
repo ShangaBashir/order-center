@@ -1,5 +1,17 @@
 [
   {
+    "_id": "cust_1795288848975_p6o8",
+    "customerId": "SHNG-5700",
+    "name": "Shanga Bashir",
+    "phone": "9876 54",
+    "secondaryPhone": "",
+    "email": "shanga@gmail.com",
+    "address": "bvccfghj",
+    "notes": "",
+    "createdAt": "2026-11-21T19:20:48.975Z",
+    "updatedAt": "2026-11-21T19:23:49.186Z"
+  },
+  {
     "_id": "cust_1795288716608_70wj",
     "customerId": "TSTR-1462",
     "name": "Test Real Admin",

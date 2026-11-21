@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import mongoose from 'mongoose';
 import Order from '../models/Order';
 import User from '../models/User';
+import Customer from '../models/Customer';
 import { authMiddleware, adminOnly, AuthRequest } from '../middleware/auth';
 import { memoryStore } from '../memoryStore';
 import { RateLimiter } from '../middleware/rateLimit';
@@ -166,6 +167,22 @@ router.post('/', adminOnly, async (req: AuthRequest, res: Response) => {
     const initialStatus = status || 'Purchased';
     const now = new Date();
 
+    // Ensure customerId is accurately assigned to the order
+    let finalCustomerId = (customerId || req.body.selectedCustomerId || '').trim().toUpperCase();
+    if (!finalCustomerId) {
+      const cleanPhone = (phone || '').replace(/\D/g, '');
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const allCusts = isDbConnected() ? await Customer.find().lean() : memoryStore.getAllCustomers();
+      const matched = allCusts.find((c: any) => {
+        const cPhone = (c.phone || '').replace(/\D/g, '');
+        const cEmail = (c.email || '').trim().toLowerCase();
+        return (cleanPhone && cPhone && cleanPhone === cPhone) || (cleanEmail && cEmail && cleanEmail === cEmail);
+      });
+      if (matched && matched.customerId) {
+        finalCustomerId = matched.customerId.trim().toUpperCase();
+      }
+    }
+
     const statusHistory = [
       {
         status: initialStatus,
@@ -180,7 +197,7 @@ router.post('/', adminOnly, async (req: AuthRequest, res: Response) => {
       try {
         const orderDoc = new Order({
           orderId,
-          customerId: customerId || '',
+          customerId: finalCustomerId,
           customerName,
           phone,
           email: email || '',
@@ -213,7 +230,7 @@ router.post('/', adminOnly, async (req: AuthRequest, res: Response) => {
     // Always keep memoryStore synced
     const memOrder = memoryStore.addOrder({
       orderId,
-      customerId: customerId || '',
+      customerId: finalCustomerId,
       customerName,
       phone,
       email,
@@ -249,7 +266,9 @@ router.post('/', adminOnly, async (req: AuthRequest, res: Response) => {
     return res.status(201).json({
       message: 'Order created successfully.',
       order: finalCreated,
-      orderId
+      orderId: finalCreated.orderId || orderId,
+      customerId: finalCustomerId,
+      ...finalCreated
     });
   } catch (err: any) {
     console.error('Error creating order:', err);
@@ -261,8 +280,26 @@ router.post('/', adminOnly, async (req: AuthRequest, res: Response) => {
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userRole = req.user?.role;
-    const isCustomer = Boolean(req.user?.isCustomer && req.user?.customerId);
-    const customerId = (req.user?.customerId || '').trim().toUpperCase();
+    let isCustomer = Boolean(req.user?.isCustomer && req.user?.customerId);
+    let customerId = (req.user?.customerId || '').trim().toUpperCase();
+
+    // If customerId is not present in token payload, check user record in database or memoryStore
+    if (!customerId && req.user?.email) {
+      const email = req.user.email.trim().toLowerCase();
+      let dbUser: any = null;
+      if (isDbConnected()) {
+        try {
+          dbUser = await User.findOne({ email }).lean();
+        } catch (e) {}
+      }
+      if (!dbUser) {
+        dbUser = memoryStore.findUserByEmail(email);
+      }
+      if (dbUser && (dbUser.isCustomer || dbUser.customerId) && dbUser.customerId) {
+        customerId = dbUser.customerId.trim().toUpperCase();
+        isCustomer = true;
+      }
+    }
 
     // Standard Users (not verified customers) have no access to orders
     if (userRole !== 'admin' && !isCustomer) {
@@ -377,7 +414,7 @@ router.post('/claim', authMiddleware, async (req: AuthRequest, res: Response) =>
 });
 
 // 3. GET /api/orders/:orderId (Get Single Order)
-router.get('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
+router.get('/:orderId', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
     let order: any = null;
@@ -394,7 +431,7 @@ router.get('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
       order = await Order.findOne({ $or: orClauses }).lean();
     } catch (e) {}
 
-    if (!order && !isDbConnected()) {
+    if (!order) {
       order = memoryStore.findOrder(rawId);
     }
 
@@ -404,9 +441,27 @@ router.get('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
 
     // Role-based authorization: standard users cannot view orders; customers can only view their own
     if (req.user?.role !== 'admin') {
-      const isCustomer = Boolean(req.user?.isCustomer && req.user?.customerId);
-      const customerId = (req.user?.customerId || '').trim().toUpperCase();
-      if (!isCustomer) {
+      let isCustomer = Boolean(req.user?.isCustomer && req.user?.customerId);
+      let customerId = (req.user?.customerId || '').trim().toUpperCase();
+
+      if (!customerId && req.user?.email) {
+        const email = req.user.email.trim().toLowerCase();
+        let dbUser: any = null;
+        if (isDbConnected()) {
+          try {
+            dbUser = await User.findOne({ email }).lean();
+          } catch (e) {}
+        }
+        if (!dbUser) {
+          dbUser = memoryStore.findUserByEmail(email);
+        }
+        if (dbUser && (dbUser.isCustomer || dbUser.customerId) && dbUser.customerId) {
+          customerId = dbUser.customerId.trim().toUpperCase();
+          isCustomer = true;
+        }
+      }
+
+      if (!isCustomer || !customerId) {
         return res.status(403).json({ message: 'Access denied. You must be a verified customer to view order details.' });
       }
       const ordCustId = (order.customerId || '').trim().toUpperCase();
@@ -426,6 +481,24 @@ router.put('/:orderId', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
     const rawId = req.params.orderId.trim();
     const updates = req.body;
+
+    if (updates.customerId !== undefined) {
+      updates.customerId = updates.customerId.trim().toUpperCase();
+    } else {
+      const cleanPhone = (updates.phone || '').replace(/\D/g, '');
+      const cleanEmail = (updates.email || '').trim().toLowerCase();
+      if (cleanPhone || cleanEmail) {
+        const allCusts = isDbConnected() ? await Customer.find().lean() : memoryStore.getAllCustomers();
+        const matched = allCusts.find((c: any) => {
+          const cPhone = (c.phone || '').replace(/\D/g, '');
+          const cEmail = (c.email || '').trim().toLowerCase();
+          return (cleanPhone && cPhone && cleanPhone === cPhone) || (cleanEmail && cEmail && cleanEmail === cEmail);
+        });
+        if (matched && matched.customerId) {
+          updates.customerId = matched.customerId.trim().toUpperCase();
+        }
+      }
+    }
 
     if (updates.productUrl !== undefined && !updates.productUrl.trim()) {
       return res.status(400).json({ message: 'Product Link / URL cannot be empty.' });

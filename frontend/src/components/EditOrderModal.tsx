@@ -36,6 +36,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
 
   const [formData, setFormData] = useState({
+    customerId: order.customerId || '',
     status: (order.status || 'Purchased') as OrderStatus,
     customerName: order.customerName || '',
     phone: order.phone || '',
@@ -64,6 +65,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
   useEffect(() => {
     if (order) {
       setFormData({
+        customerId: order.customerId || '',
         status: (order.status || 'Purchased') as OrderStatus,
         customerName: order.customerName || '',
         phone: order.phone || '',
@@ -115,6 +117,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
     if (selectedCust) {
       setFormData(prev => ({
         ...prev,
+        customerId: selectedCust.customerId || custId,
         customerName: selectedCust.name || '',
         phone: formatPhoneNumber(selectedCust.phone || ''),
         email: selectedCust.email || '',
@@ -215,6 +218,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
 
       const updates: Partial<AdminOrder> = {
         ...formData,
+        customerId: selectedCustomerId || formData.customerId || order.customerId || '',
         productUrl: formData.productUrl.trim(),
         productImage: formData.productImage?.trim() || '',
         productPrice: convertedProductPrice,

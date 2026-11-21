@@ -19,6 +19,7 @@ export const AdminAddOrder: React.FC = () => {
   const [nextOrderId, setNextOrderId] = useState<string>('');
 
   const [formData, setFormData] = useState({
+    customerId: '',
     customerName: '',
     phone: '',
     email: '',
@@ -72,6 +73,7 @@ export const AdminAddOrder: React.FC = () => {
     if (!custId) {
       setFormData(prev => ({
         ...prev,
+        customerId: '',
         customerName: '',
         phone: '',
         email: '',
@@ -84,6 +86,7 @@ export const AdminAddOrder: React.FC = () => {
     if (selectedCust) {
       setFormData(prev => ({
         ...prev,
+        customerId: selectedCust.customerId || custId,
         customerName: selectedCust.name || '',
         phone: formatPhoneNumber(selectedCust.phone || ''),
         email: selectedCust.email || '',
@@ -144,6 +147,7 @@ export const AdminAddOrder: React.FC = () => {
     try {
       const payload = {
         ...formData,
+        customerId: selectedCustomerId || formData.customerId || '',
         productUrl: formData.productUrl.trim(),
         productPrice: formData.productCurrency === 'IQD' ? rawProdPrice / usdToIqdRate : rawProdPrice,
         shippingFee: formData.shippingCurrency === 'IQD' ? rawShipFee / usdToIqdRate : rawShipFee,

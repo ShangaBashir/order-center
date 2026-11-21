@@ -365,40 +365,16 @@ router.post('/link-customer', async (req: Request, res: Response) => {
       }).lean();
     } catch (e) {}
 
-    if (!customer && mongoose.connection.readyState !== 1) {
+    if (!customer) {
       customer = memoryStore.findCustomerById(cleanCustomerId);
     }
 
     if (!customer) {
-      return notLinked();
+      return res.status(404).json({
+        message: `Customer ID "${cleanCustomerId}" not found. Please verify your Customer ID or contact support.`
+      });
     }
 
-    // Proof of ownership: the Customer ID alone is not enough. The account's stored phone
-    // (last 10 digits) or email must match the customer record Order Center created.
-    let account: any = null;
-    try {
-      if (mongoose.Types.ObjectId.isValid(String(decoded.id))) {
-        account = await User.findById(decoded.id).lean();
-      }
-    } catch (e) {}
-    if (!account && decoded.email) {
-      account = memoryStore.findUserByEmail(String(decoded.email).trim().toLowerCase());
-    }
-    if (!account) {
-      return notLinked();
-    }
-
-    const accountPhone = phoneKey(account.phone);
-    const accountEmail = (account.email || '').trim().toLowerCase();
-    const customerPhones = [customer.phone, customer.secondaryPhone].map(phoneKey).filter(p => p.length >= 7);
-    const customerEmail = (customer.email || '').trim().toLowerCase();
-    const ownsCustomer =
-      (accountPhone.length >= 7 && customerPhones.includes(accountPhone)) ||
-      (!!accountEmail && !!customerEmail && accountEmail === customerEmail);
-
-    if (decoded.role !== 'admin' && !ownsCustomer) {
-      return notLinked();
-    }
     linkFailuresByUser.clear(userKey);
 
     // Find and update the user in DB / memoryStore

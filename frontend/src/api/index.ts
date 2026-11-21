@@ -254,7 +254,7 @@ export const orderApi = {
         c => (c.customerId && c.customerId.toUpperCase() === cleanId) || c._id === cleanId
       );
       if (matched) {
-        const storedUser = localStorage.getItem('ordercenter_admin_user');
+        const storedUser = localStorage.getItem('ordercenter_user_user') || localStorage.getItem('ordercenter_admin_user');
         const userObj: AdminUser = storedUser ? JSON.parse(storedUser) : {
           id: 'user_local',
           name: matched.name,
@@ -268,7 +268,7 @@ export const orderApi = {
           customerId: matched.customerId,
           phone: userObj.phone || matched.phone
         };
-        const dummyToken = localStorage.getItem('ordercenter_admin_token') || 'demo_token';
+        const dummyToken = localStorage.getItem('ordercenter_user_token') || localStorage.getItem('ordercenter_admin_token') || 'demo_token';
         return {
           token: dummyToken,
           user: updatedUser,
@@ -285,7 +285,7 @@ export const orderApi = {
       const res = await api.post('/auth/unlink-customer');
       return res.data;
     } catch (err: any) {
-      const storedUser = localStorage.getItem('ordercenter_admin_user');
+      const storedUser = localStorage.getItem('ordercenter_user_user') || localStorage.getItem('ordercenter_admin_user');
       const userObj: AdminUser = storedUser ? JSON.parse(storedUser) : {
         id: 'user_local',
         name: 'User',
@@ -334,7 +334,7 @@ export const orderApi = {
     } catch (err) {
       if (useDemoFallback(err)) {
         try {
-          const storedUser = localStorage.getItem('ordercenter_admin_user');
+          const storedUser = localStorage.getItem('ordercenter_user_user') || localStorage.getItem('ordercenter_admin_user');
           const userObj = storedUser ? JSON.parse(storedUser) : null;
           if (!userObj || userObj.role !== 'admin') {
             const isCustomer = Boolean(userObj?.isCustomer && userObj?.customerId);
@@ -547,7 +547,7 @@ export const orderApi = {
       }
       if (!useDemoFallback(err)) throw apiError(err, 'Order not found. Please check your Order ID or Tracking Number.');
 
-      const storedUser = localStorage.getItem('ordercenter_admin_user');
+      const storedUser = localStorage.getItem('ordercenter_user_user') || localStorage.getItem('ordercenter_admin_user');
       const userObj = storedUser ? JSON.parse(storedUser) : null;
       if (!userObj || userObj.role !== 'admin') {
         const isCustomer = Boolean(userObj?.isCustomer && userObj?.customerId);

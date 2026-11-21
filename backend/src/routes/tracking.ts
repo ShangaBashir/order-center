@@ -2,6 +2,7 @@ import { Router } from 'express';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import Order from '../models/Order';
+import User from '../models/User';
 import { memoryStore } from '../memoryStore';
 import { realtimeHub } from '../realtime';
 
@@ -48,7 +49,27 @@ router.get('/:orderId', async (req, res) => {
     }
 
     // Standard Users have NO access to orders or order details
-    const isCustomer = Boolean(currentUser.isCustomer && currentUser.customerId);
+    let isCustomer = Boolean(currentUser.isCustomer && currentUser.customerId);
+    let userCustId = (currentUser.customerId || '').trim().toUpperCase();
+
+    // Stale token resolution: check DB / memoryStore if customerId is missing from token payload
+    if (!userCustId && currentUser.email) {
+      const email = currentUser.email.trim().toLowerCase();
+      let dbUser: any = null;
+      if (mongoose.connection.readyState === 1) {
+        try {
+          dbUser = await User.findOne({ email }).lean();
+        } catch (e) {}
+      }
+      if (!dbUser) {
+        dbUser = memoryStore.findUserByEmail(email);
+      }
+      if (dbUser && (dbUser.isCustomer || dbUser.customerId) && dbUser.customerId) {
+        userCustId = dbUser.customerId.trim().toUpperCase();
+        isCustomer = true;
+      }
+    }
+
     if (currentUser.role !== 'admin' && !isCustomer) {
       return res.status(403).json({
         message: 'Standard user accounts cannot view orders. Please connect your Customer ID in My Account to view your orders.'
@@ -71,7 +92,7 @@ router.get('/:orderId', async (req, res) => {
     } catch (e) {}
 
     // Fallback memory search
-    if (!order && mongoose.connection.readyState !== 1) {
+    if (!order) {
       order = memoryStore.findOrder(rawId);
     }
 
@@ -82,7 +103,6 @@ router.get('/:orderId', async (req, res) => {
     // Strict customer isolation: Each customer can ONLY see their own orders
     if (currentUser.role !== 'admin') {
       const ordCustId = (order.customerId || '').trim().toUpperCase();
-      const userCustId = (currentUser.customerId || '').trim().toUpperCase();
 
       if (!ordCustId || ordCustId !== userCustId) {
         return res.status(403).json({
@@ -94,6 +114,7 @@ router.get('/:orderId', async (req, res) => {
     // Return customer-safe public view
     const publicData = {
       orderId: order.orderId,
+      customerId: order.customerId,
       customerName: order.customerName,
       productName: order.productName,
       productImage: order.productImage,
