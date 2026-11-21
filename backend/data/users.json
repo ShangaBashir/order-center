@@ -42,16 +42,5 @@
     "customerId": "",
     "_id": "user_1795120433154_a8z9",
     "createdAt": "2026-11-19T20:33:53.154Z"
-  },
-  {
-    "name": "Shanga Bashir",
-    "email": "shanga@gmail.com",
-    "password": "$2a$10$MRZ6akoYBFbMyLlu5AU5a.9uOoAzil0bvn8/smosQlHd0rdBvOD4O",
-    "phone": "9876 54",
-    "role": "customer",
-    "isCustomer": true,
-    "customerId": "SHNG-5700",
-    "_id": "user_1795288923335_9fir",
-    "createdAt": "2026-11-21T19:22:03.335Z"
   }
 ]

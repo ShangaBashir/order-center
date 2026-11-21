@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Phone, Mail, MapPin, Search, UserPlus, Trash2, Hash, Tag, Eye, Edit3, X, Save,
-  ShoppingBag, CheckCircle, ChevronLeft, ChevronRight, ExternalLink, ArrowRight, Package
+  ShoppingBag, CheckCircle, ChevronLeft, ChevronRight, ExternalLink, ArrowRight, Package, AlertTriangle
 } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
 import { customerApi, orderApi } from '../api';
@@ -43,6 +43,7 @@ export const AdminCustomers: React.FC = () => {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState('');
+  const [editError, setEditError] = useState('');
 
   const loadCustomers = async () => {
     setLoading(true);
@@ -125,6 +126,7 @@ export const AdminCustomers: React.FC = () => {
       notes: cust.notes || '',
     });
     setSaveSuccess('');
+    setEditError('');
   };
 
   const isEditDuplicatePhone = () => {
@@ -133,9 +135,38 @@ export const AdminCustomers: React.FC = () => {
     return !!(p1 && p2 && p1 === p2);
   };
 
+  const isEditInvalidPrimaryPhone = () => {
+    const p1 = editForm.phone.replace(/\D/g, '');
+    return p1.length > 0 && p1.length < 10;
+  };
+
+  const isEditInvalidSecondaryPhone = () => {
+    const p2 = editForm.secondaryPhone.replace(/\D/g, '');
+    return p2.length > 0 && p2.length < 10;
+  };
+
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editCustomer || isEditDuplicatePhone()) return;
+    if (!editCustomer) return;
+    setEditError('');
+
+    const cleanPhone = editForm.phone.replace(/\D/g, '');
+    const cleanSecPhone = editForm.secondaryPhone.replace(/\D/g, '');
+
+    if (!cleanPhone || cleanPhone.length < 10) {
+      setEditError('Phone number must be a full phone number (at least 10-11 digits, e.g. 0770 156 6233).');
+      return;
+    }
+
+    if (cleanSecPhone && cleanSecPhone.length < 10) {
+      setEditError('Secondary phone number must be a full phone number (at least 10-11 digits).');
+      return;
+    }
+
+    if (isEditDuplicatePhone()) {
+      setEditError('Primary and secondary phone numbers cannot be the same.');
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -146,9 +177,11 @@ export const AdminCustomers: React.FC = () => {
       setTimeout(() => {
         setEditCustomer(null);
         setSaveSuccess('');
+        setEditError('');
       }, 1000);
     } catch (err: any) {
       console.error('Failed to update customer:', err);
+      setEditError(err.message || 'Failed to update customer.');
     } finally {
       setIsSaving(false);
     }
@@ -667,6 +700,13 @@ export const AdminCustomers: React.FC = () => {
               </div>
             ) : (
               <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
+                {editError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold animate-fade-in flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <span>{editError}</span>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                     Full Name <span className="text-red-500">*</span>
@@ -692,10 +732,15 @@ export const AdminCustomers: React.FC = () => {
                       value={editForm.phone}
                       onChange={e => setEditForm({ ...editForm, phone: formatPhoneNumber(e.target.value) })}
                       className={`w-full px-3.5 py-2 text-sm border rounded-xl focus:ring-2 focus:ring-[#711612]/20 font-mono ${
-                        isEditDuplicatePhone() ? 'border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
+                        isEditDuplicatePhone() || isEditInvalidPrimaryPhone() ? 'border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
                       }`}
                       placeholder="0770 111 1111"
                     />
+                    {isEditInvalidPrimaryPhone() && (
+                      <p className="text-[11px] font-semibold text-red-600 mt-1">
+                        ⚠️ Must be at least 10-11 digits.
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -721,10 +766,15 @@ export const AdminCustomers: React.FC = () => {
                     value={editForm.secondaryPhone}
                     onChange={e => setEditForm({ ...editForm, secondaryPhone: formatPhoneNumber(e.target.value) })}
                     className={`w-full px-3.5 py-2 text-sm border rounded-xl focus:ring-2 focus:ring-[#711612]/20 font-mono ${
-                      isEditDuplicatePhone() ? 'border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
+                      isEditDuplicatePhone() || isEditInvalidSecondaryPhone() ? 'border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
                     }`}
                     placeholder="0770 111 1111"
                   />
+                  {isEditInvalidSecondaryPhone() && (
+                    <p className="text-[11px] font-semibold text-red-600 mt-1">
+                      ⚠️ Secondary phone must be at least 10-11 digits.
+                    </p>
+                  )}
                   {isEditDuplicatePhone() && (
                     <p className="text-xs font-semibold text-red-600 mt-1 flex items-center gap-1">
                       <span>⚠️ Primary and secondary phone numbers cannot be the same.</span>

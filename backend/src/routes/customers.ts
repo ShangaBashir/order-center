@@ -76,6 +76,19 @@ router.post('/', adminOnly, async (req: AuthRequest, res: Response) => {
 
     const cleanPhone = (phone || '').replace(/\D/g, '');
     const cleanSecondary = (secondaryPhone || '').replace(/\D/g, '');
+
+    if (cleanPhone.length < 10) {
+      return res.status(400).json({
+        message: 'Phone number must be a full phone number (at least 10-11 digits, e.g. 0770 156 6233).'
+      });
+    }
+
+    if (cleanSecondary && cleanSecondary.length < 10) {
+      return res.status(400).json({
+        message: 'Secondary phone number must be a full phone number (at least 10-11 digits).'
+      });
+    }
+
     if (cleanSecondary && cleanPhone && cleanPhone === cleanSecondary) {
       return res.status(400).json({ message: 'Primary and secondary phone numbers cannot be the same' });
     }
@@ -136,6 +149,19 @@ router.put('/:id', adminOnly, async (req: AuthRequest, res: Response) => {
 
     const cleanPhone = (phone || '').replace(/\D/g, '');
     const cleanSecondary = (secondaryPhone || '').replace(/\D/g, '');
+
+    if (cleanPhone.length < 10) {
+      return res.status(400).json({
+        message: 'Phone number must be a full phone number (at least 10-11 digits, e.g. 0770 156 6233).'
+      });
+    }
+
+    if (cleanSecondary && cleanSecondary.length < 10) {
+      return res.status(400).json({
+        message: 'Secondary phone number must be a full phone number (at least 10-11 digits).'
+      });
+    }
+
     if (cleanSecondary && cleanPhone && cleanPhone === cleanSecondary) {
       return res.status(400).json({ message: 'Primary and secondary phone numbers cannot be the same' });
     }

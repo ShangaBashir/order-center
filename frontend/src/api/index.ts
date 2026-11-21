@@ -681,6 +681,15 @@ export const customerApi = {
   },
 
   async createCustomer(custData: Partial<Customer>): Promise<{ message: string; customer: Customer; customerId: string }> {
+    const cleanPhone = (custData.phone || '').replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      throw new Error('Phone number must be a full phone number (at least 10-11 digits, e.g. 0770 156 6233).');
+    }
+    const cleanSec = (custData.secondaryPhone || '').replace(/\D/g, '');
+    if (cleanSec && cleanSec.length < 10) {
+      throw new Error('Secondary phone number must be a full phone number (at least 10-11 digits).');
+    }
+
     try {
       const res = await api.post('/customers', custData);
       const created = res.data.customer;
@@ -692,7 +701,10 @@ export const customerApi = {
         localCustomersStore.unshift(created);
       }
       return res.data;
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.response?.data?.message) {
+        throw new Error(err.response.data.message);
+      }
       if (!useDemoFallback(err)) throw apiError(err, 'Failed to create customer.');
       let prefix = '';
       if (custData.name && custData.name.trim()) {
@@ -736,6 +748,19 @@ export const customerApi = {
   },
 
   async updateCustomer(id: string, custData: Partial<Customer>): Promise<{ message: string; customer: Customer }> {
+    if (custData.phone !== undefined) {
+      const cleanPhone = custData.phone.replace(/\D/g, '');
+      if (cleanPhone.length < 10) {
+        throw new Error('Phone number must be a full phone number (at least 10-11 digits, e.g. 0770 156 6233).');
+      }
+    }
+    if (custData.secondaryPhone) {
+      const cleanSec = custData.secondaryPhone.replace(/\D/g, '');
+      if (cleanSec.length > 0 && cleanSec.length < 10) {
+        throw new Error('Secondary phone number must be a full phone number (at least 10-11 digits).');
+      }
+    }
+
     try {
       const res = await api.put(`/customers/${id}`, custData);
       const updated = res.data.customer;
@@ -744,7 +769,10 @@ export const customerApi = {
         localCustomersStore[idx] = { ...localCustomersStore[idx], ...updated };
       }
       return res.data;
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.response?.data?.message) {
+        throw new Error(err.response.data.message);
+      }
       if (!useDemoFallback(err)) throw apiError(err, 'Failed to update customer.');
       const idx = localCustomersStore.findIndex(c => c.customerId === id || c._id === id);
       if (idx !== -1) {

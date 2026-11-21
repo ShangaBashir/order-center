@@ -35,10 +35,33 @@ export const AddCustomerPage: React.FC = () => {
     return !!(p1 && p2 && p1 === p2);
   };
 
+  const isInvalidPrimaryPhone = () => {
+    const p1 = formData.phone.replace(/\D/g, '');
+    return p1.length > 0 && p1.length < 10;
+  };
+
+  const isInvalidSecondaryPhone = () => {
+    const p2 = formData.secondaryPhone.replace(/\D/g, '');
+    return p2.length > 0 && p2.length < 10;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessNotice(null);
+
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    const cleanSecPhone = formData.secondaryPhone.replace(/\D/g, '');
+
+    if (!cleanPhone || cleanPhone.length < 10) {
+      setErrorMsg('Phone number must be a full phone number (at least 10-11 digits, e.g. 0770 156 6233).');
+      return;
+    }
+
+    if (cleanSecPhone && cleanSecPhone.length < 10) {
+      setErrorMsg('Secondary phone number must be a full phone number (at least 10-11 digits).');
+      return;
+    }
 
     if (isDuplicatePhone()) {
       setErrorMsg('Primary and secondary phone numbers cannot be the same.');
@@ -179,12 +202,17 @@ export const AddCustomerPage: React.FC = () => {
                       autoComplete="off"
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder=""
+                      placeholder="0770 123 4567"
                       className={`w-full pl-9 pr-4 py-2.5 text-sm border rounded-xl shadow-sm focus:ring-[#711612] font-mono ${
-                        isDuplicatePhone() ? 'border-red-500 focus:border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
+                        isDuplicatePhone() || isInvalidPrimaryPhone() ? 'border-red-500 focus:border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
                       }`}
                     />
                   </div>
+                  {isInvalidPrimaryPhone() && (
+                    <p className="text-[11px] font-semibold text-red-600 mt-1">
+                      ⚠️ Must be a full phone number (at least 10-11 digits).
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -217,12 +245,17 @@ export const AddCustomerPage: React.FC = () => {
                       autoComplete="off"
                       value={formData.secondaryPhone}
                       onChange={handleChange}
-                      placeholder=""
+                      placeholder="0750 123 4567"
                       className={`w-full pl-9 pr-4 py-2.5 text-sm border rounded-xl shadow-sm focus:ring-[#711612] font-mono ${
-                        isDuplicatePhone() ? 'border-red-500 focus:border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
+                        isDuplicatePhone() || isInvalidSecondaryPhone() ? 'border-red-500 focus:border-red-500 bg-red-50/30' : 'border-slate-300 focus:border-[#711612]'
                       }`}
                     />
                   </div>
+                  {isInvalidSecondaryPhone() && (
+                    <p className="text-[11px] font-semibold text-red-600 mt-1">
+                      ⚠️ Secondary phone must be at least 10-11 digits.
+                    </p>
+                  )}
                   {isDuplicatePhone() && (
                     <p className="text-xs font-semibold text-red-600 mt-1 flex items-center gap-1">
                       <span>⚠️ Primary and secondary phone numbers cannot be the same.</span>
