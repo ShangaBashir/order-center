@@ -116,8 +116,23 @@ export const AddCustomerPage: React.FC = () => {
 
           {/* Error Banner */}
           {errorMsg && (
-            <div className="p-4 bg-red-50 border-b border-red-200 text-red-700 text-sm font-semibold">
-              {errorMsg}
+            <div className="p-4 bg-red-50 border-b border-red-200 text-red-700 text-sm font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in">
+              <div className="flex items-center gap-2">
+                <span>{errorMsg}</span>
+              </div>
+              {errorMsg.toLowerCase().includes('admin access required') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('ordercenter_admin_token');
+                    localStorage.removeItem('ordercenter_admin_user');
+                    navigate('/admin/login');
+                  }}
+                  className="px-3.5 py-1.5 rounded-lg bg-[#711612] text-amber-300 hover:text-white font-bold text-xs shadow-sm flex-shrink-0 transition"
+                >
+                  Sign In as Admin
+                </button>
+              )}
             </div>
           )}
 

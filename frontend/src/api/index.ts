@@ -12,24 +12,36 @@ const api = axios.create({
   },
 });
 
-// Interceptor to add Authorization Bearer token
+// Interceptor to add Authorization Bearer token (prefers admin token on admin routes)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('ordercenter_admin_token');
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  let token = localStorage.getItem('ordercenter_admin_token');
+
+  // If on client website pages, prefer client user token if available
+  if (!path.startsWith('/admin')) {
+    const clientToken = localStorage.getItem('ordercenter_user_token');
+    if (clientToken) token = clientToken;
+  }
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Expired or invalid admin session: clear it and send the admin back to the login page
+// Expired or invalid admin session: handle unauthorized or non-admin attempts
 api.interceptors.response.use(
   (res) => res,
   (error) => {
     const path = typeof window !== 'undefined' ? window.location.pathname : '';
-    if (error?.response?.status === 401 && path.startsWith('/admin') && path !== '/admin/login') {
-      localStorage.removeItem('ordercenter_admin_token');
-      localStorage.removeItem('ordercenter_admin_user');
-      window.location.href = '/admin/login';
+    const status = error?.response?.status;
+    if ((status === 401 || status === 403) && path.startsWith('/admin') && path !== '/admin/login') {
+      const msg = (error?.response?.data?.message || '').toLowerCase();
+      if (status === 401 || msg.includes('admin access required')) {
+        // If an invalid or non-admin token was used on an admin route, clear admin storage
+        localStorage.removeItem('ordercenter_admin_token');
+        localStorage.removeItem('ordercenter_admin_user');
+      }
     }
     return Promise.reject(error);
   }

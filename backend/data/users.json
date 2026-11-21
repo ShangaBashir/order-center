@@ -1,10 +1,21 @@
 [
   {
+    "name": "OrderCenter Admin",
+    "email": "admin@ordercenter.iq",
+    "password": "$2a$10$Lkydlx5d13Rz0x.dm2USLeGfz83WkverZkimPPo7IEf2W4TJvFj4C",
+    "phone": "07701566233",
+    "role": "admin",
+    "isCustomer": false,
+    "customerId": "",
+    "_id": "admin_1",
+    "createdAt": "2026-11-12T12:00:00.000Z"
+  },
+  {
     "name": "Bashir",
     "email": "shanga.bashir22@gmail.com",
     "password": "$2a$10$2I92asP/257fSN/anmZPounJHstv0LWArd5YQfdMkyHyanFZ18FHa",
     "phone": "07501445566",
-    "role": "user",
+    "role": "admin",
     "isCustomer": false,
     "customerId": "",
     "_id": "user_bashir_01",
@@ -20,5 +31,16 @@
     "customerId": "",
     "_id": "user_1794492977787_xypa",
     "createdAt": "2026-11-12T14:16:17.787Z"
+  },
+  {
+    "name": "Shanga Bashir",
+    "email": "shanga.bashir@gmail.com",
+    "password": "$2a$10$qOhQ8/LDhu2WwAayBJz5KuaFmLCRrlFKuSN7rM2TBR.FsQEA6CQtC",
+    "phone": "9999 999 9999",
+    "role": "user",
+    "isCustomer": false,
+    "customerId": "",
+    "_id": "user_1795120433154_a8z9",
+    "createdAt": "2026-11-19T20:33:53.154Z"
   }
 ]

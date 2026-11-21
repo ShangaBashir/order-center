@@ -30,15 +30,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('ordercenter_admin_token');
-    const savedUser = localStorage.getItem('ordercenter_admin_user');
+    const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+    
+    // Select appropriate storage keys so public customer sessions don't overwrite Admin Dashboard sessions
+    let savedToken = isAdminRoute
+      ? localStorage.getItem('ordercenter_admin_token')
+      : (localStorage.getItem('ordercenter_user_token') || localStorage.getItem('ordercenter_admin_token'));
+    let savedUser = isAdminRoute
+      ? localStorage.getItem('ordercenter_admin_user')
+      : (localStorage.getItem('ordercenter_user_user') || localStorage.getItem('ordercenter_admin_user'));
+
     if (savedToken && savedUser) {
       try {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
       } catch (e) {
-        localStorage.removeItem('ordercenter_admin_token');
-        localStorage.removeItem('ordercenter_admin_user');
+        if (isAdminRoute) {
+          localStorage.removeItem('ordercenter_admin_token');
+          localStorage.removeItem('ordercenter_admin_user');
+        } else {
+          localStorage.removeItem('ordercenter_user_token');
+          localStorage.removeItem('ordercenter_user_user');
+        }
       }
     }
     setLoading(false);
@@ -48,8 +61,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const data = await orderApi.login(email, pass);
     setToken(data.token);
     setUser(data.user);
-    localStorage.setItem('ordercenter_admin_token', data.token);
-    localStorage.setItem('ordercenter_admin_user', JSON.stringify(data.user));
+    if (data.user.role === 'admin') {
+      localStorage.setItem('ordercenter_admin_token', data.token);
+      localStorage.setItem('ordercenter_admin_user', JSON.stringify(data.user));
+    } else {
+      localStorage.setItem('ordercenter_user_token', data.token);
+      localStorage.setItem('ordercenter_user_user', JSON.stringify(data.user));
+    }
     return data.user;
   };
 
@@ -64,16 +82,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await orderApi.register(data);
     setToken(res.token);
     setUser(res.user);
-    localStorage.setItem('ordercenter_admin_token', res.token);
-    localStorage.setItem('ordercenter_admin_user', JSON.stringify(res.user));
+    // Public registration saves client user keys so Admin dashboard sessions are preserved
+    localStorage.setItem('ordercenter_user_token', res.token);
+    localStorage.setItem('ordercenter_user_user', JSON.stringify(res.user));
   };
 
   const updateCurrentUser = (newUser: AdminUser, newToken?: string) => {
     setUser(newUser);
-    localStorage.setItem('ordercenter_admin_user', JSON.stringify(newUser));
-    if (newToken) {
-      setToken(newToken);
-      localStorage.setItem('ordercenter_admin_token', newToken);
+    if (newUser.role === 'admin') {
+      localStorage.setItem('ordercenter_admin_user', JSON.stringify(newUser));
+      if (newToken) {
+        setToken(newToken);
+        localStorage.setItem('ordercenter_admin_token', newToken);
+      }
+    } else {
+      localStorage.setItem('ordercenter_user_user', JSON.stringify(newUser));
+      if (newToken) {
+        setToken(newToken);
+        localStorage.setItem('ordercenter_user_token', newToken);
+      }
     }
   };
 
@@ -81,8 +108,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await orderApi.linkCustomerId(custId);
     setToken(res.token);
     setUser(res.user);
-    localStorage.setItem('ordercenter_admin_token', res.token);
-    localStorage.setItem('ordercenter_admin_user', JSON.stringify(res.user));
+    if (res.user.role === 'admin') {
+      localStorage.setItem('ordercenter_admin_token', res.token);
+      localStorage.setItem('ordercenter_admin_user', JSON.stringify(res.user));
+    } else {
+      localStorage.setItem('ordercenter_user_token', res.token);
+      localStorage.setItem('ordercenter_user_user', JSON.stringify(res.user));
+    }
     return res;
   };
 
@@ -90,15 +122,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await orderApi.unlinkCustomerId();
     setToken(res.token);
     setUser(res.user);
-    localStorage.setItem('ordercenter_admin_token', res.token);
-    localStorage.setItem('ordercenter_admin_user', JSON.stringify(res.user));
+    if (res.user.role === 'admin') {
+      localStorage.setItem('ordercenter_admin_token', res.token);
+      localStorage.setItem('ordercenter_admin_user', JSON.stringify(res.user));
+    } else {
+      localStorage.setItem('ordercenter_user_token', res.token);
+      localStorage.setItem('ordercenter_user_user', JSON.stringify(res.user));
+    }
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('ordercenter_admin_token');
-    localStorage.removeItem('ordercenter_admin_user');
+    const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+    if (isAdminRoute) {
+      localStorage.removeItem('ordercenter_admin_token');
+      localStorage.removeItem('ordercenter_admin_user');
+    } else {
+      localStorage.removeItem('ordercenter_user_token');
+      localStorage.removeItem('ordercenter_user_user');
+    }
   };
 
   return (
